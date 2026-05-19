@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM + Central - Prioridades da Semana | JCPM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #EEF0F4;
+      color: #1F2937;
+      line-height: 1.5;
+    }
+
+    /* ── Header ─────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #0C1C30 0%, #1B3A5C 55%, #23527A 100%);
+      color: white;
+      padding: 28px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.35);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo {
+      width: 50px; height: 50px;
+      background: #C4993B;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: white; letter-spacing: -1px;
+    }
+    .brand-text h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand-text p  { font-size: 13px; opacity: 0.6; margin-top: 2px; }
+    .header-right  { text-align: right; }
+    .week-pill {
+      display: inline-block;
+      background: #C4993B;
+      color: white;
+      padding: 7px 20px;
+      border-radius: 100px;
+      font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .updated-at { font-size: 11px; opacity: 0.45; margin-top: 8px; }
+
+    /* ── Stats bar ──────────────────────── */
+    .stats-bar {
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 14px 48px;
+      display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+    }
+    .stat { display: flex; align-items: center; gap: 7px; }
+    .stat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .stat-text { font-size: 12px; color: #6B7280; }
+    .stat-count { font-weight: 700; color: #1F2937; }
+
+    /* ── Container ──────────────────────── */
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    /* ── Section label ──────────────────── */
+    .section-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .section-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.6px; text-transform: uppercase; color: #9CA3AF;
+      white-space: nowrap;
+    }
+    .section-line { flex: 1; height: 1px; background: #D1D5DB; }
+
+    /* ── Calendar ───────────────────────── */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .day-card {
+      background: white;
+      border-radius: 14px;
+      padding: 18px 16px 16px;
+      border-top: 3px solid #CBD5E1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s;
+    }
+    .day-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+    .day-card.today {
+      border-top-color: #C4993B;
+      background: linear-gradient(170deg, #FFFBF0 0%, #FFF 45%);
+    }
+    .day-name { font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: #9CA3AF; }
+    .day-card.today .day-name { color: #C4993B; }
+    .day-num { font-size: 30px; font-weight: 700; color: #1B3A5C; margin: 3px 0 8px; line-height: 1; }
+    .day-card.today .day-num { color: #C4993B; }
+    .day-location { font-size: 12px; color: #4B5563; line-height: 1.4; margin-bottom: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip {
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 6px;
+    }
+    .chip-jcpm    { background: #DBEAFE; color: #1E40AF; }
+    .chip-home    { background: #D1FAE5; color: #065F46; }
+    .chip-central { background: #FEF3C7; color: #92400E; }
+
+    /* ── Activities ─────────────────────── */
+    .activities-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .cat-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .cat-header {
+      padding: 15px 20px;
+      display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #1B3A5C 0%, #2A537E 100%);
+      color: white;
+    }
+    .cat-icon  { font-size: 18px; }
+    .cat-name  { font-size: 14px; font-weight: 700; flex: 1; }
+    .cat-count {
+      background: rgba(255,255,255,0.18);
+      padding: 2px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .act-list  { padding: 4px 0; }
+    .act {
+      padding: 13px 20px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .act:last-child { border-bottom: none; }
+    .act-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 10px;
+      margin-bottom: 5px;
+    }
+    .act-name {
+      font-size: 13px; font-weight: 600; color: #111827;
+      flex: 1; line-height: 1.3;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px;
+      white-space: nowrap; flex-shrink: 0; letter-spacing: 0.2px;
+    }
+    .b-realizado  { background: #D1FAE5; color: #065F46; }
+    .b-aprovado   { background: #D1FAE5; color: #065F46; }
+    .b-agendado   { background: #DBEAFE; color: #1E40AF; }
+    .b-andamento  { background: #EDE9FE; color: #5B21B6; }
+    .b-aguardando { background: #FEF3C7; color: #92400E; }
+    .b-revisao    { background: #FEE2E2; color: #991B1B; }
+    .b-pendente   { background: #F3F4F6; color: #4B5563; }
+    .b-avaliacao  { background: #FDF4FF; color: #7E22CE; }
+    .act-desc {
+      font-size: 12px; color: #6B7280; line-height: 1.5;
+    }
+    .act-desc em {
+      color: #B45309; font-style: normal; font-weight: 600;
+    }
+
+    /* ── Footer ─────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 22px 48px;
+      border-top: 1px solid #E5E7EB;
+      background: white;
+      margin-top: 8px;
+    }
+    .footer p { font-size: 11px; color: #B0B7C3; }
+    .footer a  { color: #1B3A5C; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── Print ──────────────────────────── */
+    @media print {
+      body { background: white; }
+      .header, .cat-header, .badge, .chip {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .stats-bar { display: none; }
+    }
+
+    /* ── Responsive ─────────────────────── */
+    @media (max-width: 900px) {
+      .header { padding: 20px 24px; flex-direction: column; gap: 14px; text-align: center; }
+      .header-right { text-align: center; }
+      .calendar-grid { grid-template-columns: repeat(3, 1fr); }
+      .activities-grid { grid-template-columns: 1fr; }
+      .stats-bar { padding: 12px 24px; }
+    }
+    @media (max-width: 580px) {
+      .calendar-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────── -->
+<div class="header">
+  <div class="brand">
+    <div class="brand-logo">JC</div>
+    <div class="brand-text">
+      <h1>Semana de 18 a 22 / maio / 2026</h1>
+      <p>CRM + Central — Prioridades da Semana</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="updated-at">Atualizado em 18/05/2026 às 11:00</div>
+  </div>
+</div>
+
+<!-- ── STATS BAR ────────────────────────────────── -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-dot" style="background:#7C3AED"></div>
+    <span class="stat-text"><span class="stat-count">4</span> Em andamento</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#D97706"></div>
+    <span class="stat-text"><span class="stat-count">3</span> Aguardando</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#6B7280"></div>
+    <span class="stat-text"><span class="stat-count">4</span> Pendente</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#059669"></div>
+    <span class="stat-text"><span class="stat-count">1</span> Aprovado</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#2563EB"></div>
+    <span class="stat-text"><span class="stat-count">1</span> Agendado</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#DC2626"></div>
+    <span class="stat-text"><span class="stat-count">1</span> Em revisão</span>
+  </div>
+  <div class="stat">
+    <div class="stat-dot" style="background:#7E22CE"></div>
+    <span class="stat-text"><span class="stat-count">1</span> Em avaliação</span>
+  </div>
+</div>
+
+<!-- ── MAIN ─────────────────────────────────────── -->
+<div class="container">
+
+  <!-- Agenda da semana -->
+  <div class="section-row">
+    <span class="section-label">📍 Agenda da semana</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="calendar-grid">
+
+    <div class="day-card today">
+      <div class="day-name">Segunda</div>
+      <div class="day-num">18</div>
+      <div class="day-location">JCPM — dia todo</div>
+      <div class="chips">
+        <span class="chip chip-jcpm">🏢 JCPM</span>
+        <span class="chip chip-jcpm" style="background:#FEF9EE;color:#C4993B;border:1px solid #C4993B;">Hoje</span>
+      </div>
+    </div>
+
+    <div class="day-card">
+      <div class="day-name">Terça</div>
+      <div class="day-num">19</div>
+      <div class="day-location">Home office</div>
+      <div class="chips">
+        <span class="chip chip-home">🏠 Home</span>
+      </div>
+    </div>
+
+    <div class="day-card">
+      <div class="day-name">Quarta</div>
+      <div class="day-num">20</div>
+      <div class="day-location">JCPM manhã · Central tarde</div>
+      <div class="chips">
+        <span class="chip chip-jcpm">🏢 JCPM</span>
+        <span class="chip chip-central">🏬 Central</span>
+      </div>
+    </div>
+
+    <div class="day-card">
+      <div class="day-name">Quinta</div>
+      <div class="day-num">21</div>
+      <div class="day-location">JCPM — dia todo</div>
+      <div class="chips">
+        <span class="chip chip-jcpm">🏢 JCPM</span>
+      </div>
+    </div>
+
+    <div class="day-card">
+      <div class="day-name">Sexta</div>
+      <div class="day-num">22</div>
+      <div class="day-location">Central manhã · JCPM tarde<br><small style="color:#9CA3AF">Reunião presencial Verônica 14h30</small></div>
+      <div class="chips">
+        <span class="chip chip-central">🏬 Central</span>
+        <span class="chip chip-jcpm">🏢 JCPM</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Atividades -->
+  <div class="section-row">
+    <span class="section-label">📋 Atividades e status</span>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="activities-grid">
+
+    <!-- CRM -->
+    <div class="cat-card">
+      <div class="cat-header">
+        <span class="cat-icon">📊</span>
+        <span class="cat-name">CRM</span>
+        <span class="cat-count">4 atividades</span>
+      </div>
+      <div class="act-list">
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Cartilha ECA Digital Da Fonte</span>
+            <span class="badge b-andamento">● Em andamento</span>
+          </div>
+          <div class="act-desc">Reunião realizada. Envio hoje do geral das atividades já definidas e aguardaremos proposta da fornecedora.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Contrato Insider (volumetria adicional)</span>
+            <span class="badge b-aguardando">● Aguardando</span>
+          </div>
+          <div class="act-desc">Aguardando devolutiva do jurídico.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Projeto Winclap</span>
+            <span class="badge b-revisao">● Em revisão</span>
+          </div>
+          <div class="act-desc">Primeira proposta de e-mail recebida e aguardando ajustes — <em>ficou bom, mas aquém da expectativa.</em></div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Viagem RioMar Aracaju e Jardins</span>
+            <span class="badge b-andamento">● Em andamento</span>
+          </div>
+          <div class="act-desc">Envio hoje do resumo dos pontos debatidos sobre a Central e os quadrimestrais de CRM às gerências e superintendências (c/ cópia Dani).</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Comunidades -->
+    <div class="cat-card">
+      <div class="cat-header">
+        <span class="cat-icon">🤝</span>
+        <span class="cat-name">Comunidades</span>
+        <span class="cat-count">3 atividades</span>
+      </div>
+      <div class="act-list">
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Lembrete p/ Dani</span>
+            <span class="badge b-pendente">● Pendente</span>
+          </div>
+          <div class="act-desc">Marcar com Paula (especialista) uma reunião sobre comunidades.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Framework + APP</span>
+            <span class="badge b-pendente">● Pendente priorização</span>
+          </div>
+          <div class="act-desc">Rafael Fernandes propôs atualização do framework com mais etapas no app. Modelo alinhado, mas ainda não priorizado.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Comunidades + Whapi</span>
+            <span class="badge b-avaliacao">● Em avaliação</span>
+          </div>
+          <div class="act-desc">Contratação de ferramenta integradora para disparos e análises.<br>R$ 49/mês (plano anual) · R$ 89/mês (mensal) — por shopping.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Central -->
+    <div class="cat-card">
+      <div class="cat-header">
+        <span class="cat-icon">🏬</span>
+        <span class="cat-name">Central</span>
+        <span class="cat-count">5 atividades</span>
+      </div>
+      <div class="act-list">
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Escopo do cargo — Kayane e atendentes</span>
+            <span class="badge b-aguardando">● Aguardando</span>
+          </div>
+          <div class="act-desc">Aguardando devolutiva de Paulo Persivo.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Protocolo Criança Perdida</span>
+            <span class="badge b-andamento">● Em andamento</span>
+          </div>
+          <div class="act-desc">Comentários das coordenações de atendimento recebidos. Envio de devolutiva ao jurídico nesta semana.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Aditivo Makeone</span>
+            <span class="badge b-aprovado">✓ Aprovado</span>
+          </div>
+          <div class="act-desc">10 canais aprovados. Aguardando minuta contratual.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Apresentação — Consultoria Verônica</span>
+            <span class="badge b-agendado">📅 Agendado</span>
+          </div>
+          <div class="act-desc">Sexta-feira, 22/05 — 14h30 às 16h. Reunião presencial em JCPM.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Treinamento Coordenadoras</span>
+            <span class="badge b-pendente">● Pend. aprovação</span>
+          </div>
+          <div class="act-desc">Aprovar material elaborado por Adriana Gomes.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Programa de Relacionamento -->
+    <div class="cat-card">
+      <div class="cat-header">
+        <span class="cat-icon">⭐</span>
+        <span class="cat-name">Programa de Relacionamento</span>
+        <span class="cat-count">2 atividades</span>
+      </div>
+      <div class="act-list">
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Apresentação</span>
+            <span class="badge b-andamento">● Em andamento</span>
+          </div>
+          <div class="act-desc">Compilado realizado. Em melhoria das ilustrações e complementação do estudo estatístico.</div>
+        </div>
+
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Stix — NDA</span>
+            <span class="badge b-aguardando">● Aguardando</span>
+          </div>
+          <div class="act-desc">NDA recebido. Definir encaminhamento ao jurídico: Rafaela ou Dani envia?</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── FOOTER ────────────────────────────────────── -->
+<div class="footer">
+  <p>Painel gerado automaticamente com base na
+    <a href="https://www.notion.so/3569d5bf2aa480fe98ebdd2ecd405957" target="_blank">Programação da Semana no Notion</a>
+    · JCPM Participações e Empreendimentos SA</p>
+</div>
+
+</body>
+</html>
