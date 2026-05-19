@@ -103,11 +103,99 @@
     .footer p { font-size: 11px; color: #B0B7C3; }
     .footer a { color: #1B3A5C; text-decoration: none; }
 
-    /* ── Print ──────────────────────────── */
+    /* ── Botão PDF ──────────────────────── */
+    .btn-pdf {
+      position: fixed; bottom: 32px; right: 32px; z-index: 999;
+      background: #1B3A5C; color: white; border: none;
+      padding: 13px 22px; border-radius: 100px;
+      font-size: 13px; font-weight: 700; font-family: inherit;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(27,58,92,0.35);
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-pdf:hover {
+      background: #C4993B;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(196,153,59,0.4);
+    }
+    .btn-pdf:active { transform: translateY(0); }
+    .btn-pdf svg { flex-shrink: 0; }
+
+    /* ── Print / PDF ────────────────────── */
     @media print {
-      body { background: white; }
-      .header, .cat-header, .badge, .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .stats-bar { display: none; }
+      /* Força impressão de cores e fundos */
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      @page {
+        size: A4 portrait;
+        margin: 14mm 14mm 18mm;
+      }
+
+      body { background: white; font-size: 10pt; }
+
+      /* Esconde elementos de UI */
+      .btn-pdf,
+      .stats-bar { display: none !important; }
+
+      /* Header compacto */
+      .header {
+        padding: 14px 24px !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+      .brand-logo { width: 38px !important; height: 38px !important; font-size: 14px !important; }
+      .brand-text h1 { font-size: 15pt !important; }
+      .brand-text p  { font-size: 9pt !important; }
+      .updated-at    { font-size: 8pt !important; }
+
+      /* Container */
+      .container { padding: 16px 0 24px !important; }
+      .section-label { font-size: 7.5pt !important; letter-spacing: 1.2px !important; }
+
+      /* Calendário — mantém 5 colunas */
+      .calendar-grid {
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 7px !important;
+        margin-bottom: 20px !important;
+      }
+      .day-card { padding: 10px 10px 8px !important; border-radius: 8px !important; }
+      .day-num  { font-size: 20pt !important; margin-bottom: 4px !important; }
+      .day-name { font-size: 7pt !important; }
+      .day-location { font-size: 8pt !important; margin-bottom: 6px !important; }
+      .chip { font-size: 7pt !important; padding: 2px 6px !important; }
+
+      /* Atividades — 2 colunas */
+      .activities-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+
+      /* Cards */
+      .cat-card {
+        border-radius: 10px !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .cat-header { padding: 10px 14px !important; }
+      .cat-icon   { font-size: 13px !important; }
+      .cat-name   { font-size: 10pt !important; }
+      .cat-count  { font-size: 7.5pt !important; padding: 1px 7px !important; }
+
+      /* Atividades */
+      .act { padding: 8px 14px !important; }
+      .act-name { font-size: 9pt !important; }
+      .badge    { font-size: 7pt !important; padding: 2px 7px !important; }
+      .act-desc { font-size: 8pt !important; }
+
+      /* Footer */
+      .footer { padding: 12px 24px !important; margin-top: 4px !important; }
+      .footer p { font-size: 7.5pt !important; }
+
+      /* Seção de atividades não quebra no meio */
+      .section-row { margin-bottom: 10px !important; }
     }
 
     /* ── Responsive ─────────────────────── */
@@ -414,6 +502,45 @@
     Programação da Semana no Notion</a>
     · JCPM Shoppings</p>
 </div>
+
+<!-- ── BOTÃO PDF ─────────────────────────────────── -->
+<button class="btn-pdf" onclick="gerarPDF()" title="Baixar como PDF (Ctrl+P)">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14,2 14,8 20,8"/>
+    <line x1="12" y1="18" x2="12" y2="12"/>
+    <polyline points="9,15 12,18 15,15"/>
+  </svg>
+  Baixar PDF
+</button>
+
+<script>
+  function gerarPDF() {
+    const btn = document.querySelector('.btn-pdf');
+    btn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+      Gerando...`;
+    btn.disabled = true;
+
+    // Pequeno delay para o botão atualizar antes de abrir o diálogo
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        btn.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <polyline points="9,15 12,18 15,15"/>
+          </svg>
+          Baixar PDF`;
+        btn.disabled = false;
+      }, 1000);
+    }, 150);
+  }
+</script>
 
 </body>
 </html>
