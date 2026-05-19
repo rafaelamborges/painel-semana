@@ -9,48 +9,31 @@
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #EEF0F4;
-      color: #1F2937;
-      line-height: 1.5;
+      background: #EEF0F4; color: #1F2937; line-height: 1.5;
     }
 
     /* ── Header ─────────────────────────── */
     .header {
       background: linear-gradient(135deg, #0C1C30 0%, #1B3A5C 55%, #23527A 100%);
-      color: white;
-      padding: 28px 48px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      color: white; padding: 28px 48px;
+      display: flex; justify-content: space-between; align-items: center;
       box-shadow: 0 2px 24px rgba(0,0,0,0.35);
     }
     .brand { display: flex; align-items: center; gap: 14px; }
     .brand-logo {
-      width: 50px; height: 50px;
-      background: #C4993B;
-      border-radius: 12px;
+      width: 50px; height: 50px; background: #C4993B; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px; font-weight: 900; color: white; letter-spacing: -1px;
     }
     .brand-text h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
     .brand-text p  { font-size: 13px; opacity: 0.6; margin-top: 2px; }
     .header-right  { text-align: right; }
-    .week-pill {
-      display: inline-block;
-      background: #C4993B;
-      color: white;
-      padding: 7px 20px;
-      border-radius: 100px;
-      font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
-    }
-    .updated-at { font-size: 11px; opacity: 0.45; margin-top: 8px; }
+    .updated-at { font-size: 11px; opacity: 0.45; margin-top: 4px; }
 
     /* ── Stats bar ──────────────────────── */
     .stats-bar {
-      background: white;
-      border-bottom: 1px solid #E5E7EB;
-      padding: 14px 48px;
-      display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
+      background: white; border-bottom: 1px solid #E5E7EB;
+      padding: 14px 48px; display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
     }
     .stat { display: flex; align-items: center; gap: 7px; }
     .stat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -58,105 +41,53 @@
     .stat-count { font-weight: 700; color: #1F2937; }
 
     /* ── Container ──────────────────────── */
-    .container {
-      max-width: 1160px;
-      margin: 0 auto;
-      padding: 32px 24px 56px;
-    }
+    .container { max-width: 1160px; margin: 0 auto; padding: 32px 24px 56px; }
 
     /* ── Section label ──────────────────── */
-    .section-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 14px;
-    }
-    .section-label {
-      font-size: 10px; font-weight: 700;
-      letter-spacing: 1.6px; text-transform: uppercase; color: #9CA3AF;
-      white-space: nowrap;
-    }
+    .section-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #9CA3AF; white-space: nowrap; }
     .section-line { flex: 1; height: 1px; background: #D1D5DB; }
 
     /* ── Calendar ───────────────────────── */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-      margin-bottom: 40px;
-    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 40px; }
     .day-card {
-      background: white;
-      border-radius: 14px;
-      padding: 18px 16px 16px;
-      border-top: 3px solid #CBD5E1;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      transition: box-shadow 0.15s;
+      background: white; border-radius: 14px; padding: 18px 16px 16px;
+      border-top: 3px solid #CBD5E1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: box-shadow 0.15s;
     }
     .day-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
-    .day-card.today {
-      border-top-color: #C4993B;
-      background: linear-gradient(170deg, #FFFBF0 0%, #FFF 45%);
-    }
+    .day-card.today { border-top-color: #C4993B; background: linear-gradient(170deg, #FFFBF0 0%, #FFF 45%); }
     .day-name { font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: #9CA3AF; }
     .day-card.today .day-name { color: #C4993B; }
     .day-num { font-size: 30px; font-weight: 700; color: #1B3A5C; margin: 3px 0 8px; line-height: 1; }
     .day-card.today .day-num { color: #C4993B; }
     .day-location { font-size: 12px; color: #4B5563; line-height: 1.4; margin-bottom: 10px; }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .chip {
-      font-size: 10px; font-weight: 600;
-      padding: 3px 8px; border-radius: 6px;
-    }
+    .chip { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
     .chip-jcpm    { background: #DBEAFE; color: #1E40AF; }
     .chip-home    { background: #D1FAE5; color: #065F46; }
     .chip-central { background: #FEF3C7; color: #92400E; }
+    .chip-ext     { background: #F3E8FF; color: #6B21A8; }
 
     /* ── Activities ─────────────────────── */
-    .activities-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .cat-card {
-      background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-    }
+    .activities-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .cat-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
     .cat-header {
-      padding: 15px 20px;
-      display: flex; align-items: center; gap: 10px;
-      background: linear-gradient(135deg, #1B3A5C 0%, #2A537E 100%);
-      color: white;
+      padding: 15px 20px; display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #1B3A5C 0%, #2A537E 100%); color: white;
     }
-    .cat-icon  { font-size: 18px; }
-    .cat-name  { font-size: 14px; font-weight: 700; flex: 1; }
-    .cat-count {
-      background: rgba(255,255,255,0.18);
-      padding: 2px 10px; border-radius: 20px;
-      font-size: 11px; font-weight: 600;
-    }
+    .cat-icon { font-size: 18px; }
+    .cat-name { font-size: 14px; font-weight: 700; flex: 1; }
+    .cat-count { background: rgba(255,255,255,0.18); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
     .act-list  { padding: 4px 0; }
-    .act {
-      padding: 13px 20px;
-      border-bottom: 1px solid #F3F4F6;
-    }
+    .act { padding: 13px 20px; border-bottom: 1px solid #F3F4F6; }
     .act:last-child { border-bottom: none; }
-    .act-top {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: 10px;
-      margin-bottom: 5px;
-    }
-    .act-name {
-      font-size: 13px; font-weight: 600; color: #111827;
-      flex: 1; line-height: 1.3;
-    }
+    .act-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
+    .act-name { font-size: 13px; font-weight: 600; color: #111827; flex: 1; line-height: 1.3; }
     .badge {
       display: inline-flex; align-items: center; gap: 4px;
-      font-size: 10px; font-weight: 700;
-      padding: 3px 10px; border-radius: 100px;
+      font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
       white-space: nowrap; flex-shrink: 0; letter-spacing: 0.2px;
     }
-    .b-realizado  { background: #D1FAE5; color: #065F46; }
     .b-aprovado   { background: #D1FAE5; color: #065F46; }
     .b-agendado   { background: #DBEAFE; color: #1E40AF; }
     .b-andamento  { background: #EDE9FE; color: #5B21B6; }
@@ -164,42 +95,26 @@
     .b-revisao    { background: #FEE2E2; color: #991B1B; }
     .b-pendente   { background: #F3F4F6; color: #4B5563; }
     .b-avaliacao  { background: #FDF4FF; color: #7E22CE; }
-    .act-desc {
-      font-size: 12px; color: #6B7280; line-height: 1.5;
-    }
-    .act-desc em {
-      color: #B45309; font-style: normal; font-weight: 600;
-    }
+    .act-desc { font-size: 12px; color: #6B7280; line-height: 1.5; }
+    .act-desc em { color: #B45309; font-style: normal; font-weight: 600; }
 
     /* ── Footer ─────────────────────────── */
-    .footer {
-      text-align: center;
-      padding: 22px 48px;
-      border-top: 1px solid #E5E7EB;
-      background: white;
-      margin-top: 8px;
-    }
+    .footer { text-align: center; padding: 22px 48px; border-top: 1px solid #E5E7EB; background: white; margin-top: 8px; }
     .footer p { font-size: 11px; color: #B0B7C3; }
-    .footer a  { color: #1B3A5C; text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
+    .footer a { color: #1B3A5C; text-decoration: none; }
 
     /* ── Print ──────────────────────────── */
     @media print {
       body { background: white; }
-      .header, .cat-header, .badge, .chip {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      .header, .cat-header, .badge, .chip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .stats-bar { display: none; }
     }
 
     /* ── Responsive ─────────────────────── */
     @media (max-width: 900px) {
       .header { padding: 20px 24px; flex-direction: column; gap: 14px; text-align: center; }
-      .header-right { text-align: center; }
       .calendar-grid { grid-template-columns: repeat(3, 1fr); }
       .activities-grid { grid-template-columns: 1fr; }
-      .stats-bar { padding: 12px 24px; }
     }
     @media (max-width: 580px) {
       .calendar-grid { grid-template-columns: 1fr 1fr; }
@@ -218,7 +133,7 @@
     </div>
   </div>
   <div class="header-right">
-    <div class="updated-at">Atualizado em 18/05/2026 às 11:00</div>
+    <div class="updated-at">Atualizado em 19/05/2026 às 13:09</div>
   </div>
 </div>
 
@@ -257,7 +172,6 @@
 <!-- ── MAIN ─────────────────────────────────────── -->
 <div class="container">
 
-  <!-- Agenda da semana -->
   <div class="section-row">
     <span class="section-label">📍 Agenda da semana</span>
     <div class="section-line"></div>
@@ -265,31 +179,31 @@
 
   <div class="calendar-grid">
 
-    <div class="day-card today">
+    <div class="day-card">
       <div class="day-name">Segunda</div>
       <div class="day-num">18</div>
       <div class="day-location">JCPM — dia todo</div>
       <div class="chips">
         <span class="chip chip-jcpm">🏢 JCPM</span>
-        <span class="chip chip-jcpm" style="background:#FEF9EE;color:#C4993B;border:1px solid #C4993B;">Hoje</span>
       </div>
     </div>
 
-    <div class="day-card">
+    <div class="day-card today">
       <div class="day-name">Terça</div>
       <div class="day-num">19</div>
       <div class="day-location">Home office</div>
       <div class="chips">
         <span class="chip chip-home">🏠 Home</span>
+        <span class="chip" style="background:#FEF9EE;color:#C4993B;border:1px solid #C4993B;">Hoje</span>
       </div>
     </div>
 
     <div class="day-card">
       <div class="day-name">Quarta</div>
       <div class="day-num">20</div>
-      <div class="day-location">JCPM manhã · Central tarde</div>
+      <div class="day-location">Audiência Alan — manhã · Central tarde</div>
       <div class="chips">
-        <span class="chip chip-jcpm">🏢 JCPM</span>
+        <span class="chip chip-ext">🏛️ Audiência</span>
         <span class="chip chip-central">🏬 Central</span>
       </div>
     </div>
@@ -315,7 +229,6 @@
 
   </div>
 
-  <!-- Atividades -->
   <div class="section-row">
     <span class="section-label">📋 Atividades e status</span>
     <div class="section-line"></div>
@@ -337,7 +250,7 @@
             <span class="act-name">Cartilha ECA Digital Da Fonte</span>
             <span class="badge b-andamento">● Em andamento</span>
           </div>
-          <div class="act-desc">Reunião realizada. Envio hoje do geral das atividades já definidas e aguardaremos proposta da fornecedora.</div>
+          <div class="act-desc">Reunião realizada. Envio hoje do geral das atividades já definidas e aguardaremos proposta.</div>
         </div>
 
         <div class="act">
@@ -397,7 +310,7 @@
             <span class="act-name">Comunidades + Whapi</span>
             <span class="badge b-avaliacao">● Em avaliação</span>
           </div>
-          <div class="act-desc">Contratação de ferramenta integradora para disparos e análises.<br>R$ 49/mês (plano anual) · R$ 89/mês (mensal) — por shopping.</div>
+          <div class="act-desc">Contratação de ferramenta integradora para disparos e análises. R$ 49/mês (plano anual) · R$ 89/mês (mensal) por shopping.</div>
         </div>
 
       </div>
@@ -460,7 +373,7 @@
       <div class="cat-header">
         <span class="cat-icon">⭐</span>
         <span class="cat-name">Programa de Relacionamento</span>
-        <span class="cat-count">2 atividades</span>
+        <span class="cat-count">3 atividades</span>
       </div>
       <div class="act-list">
 
@@ -480,6 +393,14 @@
           <div class="act-desc">NDA recebido. Definir encaminhamento ao jurídico: Rafaela ou Dani envia?</div>
         </div>
 
+        <div class="act">
+          <div class="act-top">
+            <span class="act-name">Estudo estatístico</span>
+            <span class="badge b-pendente">● Pendente</span>
+          </div>
+          <div class="act-desc">Realizar resumo estruturado.</div>
+        </div>
+
       </div>
     </div>
 
@@ -488,9 +409,10 @@
 
 <!-- ── FOOTER ────────────────────────────────────── -->
 <div class="footer">
-  <p>Painel gerado automaticamente com base na
-    <a href="https://www.notion.so/3569d5bf2aa480fe98ebdd2ecd405957" target="_blank">Programação da Semana no Notion</a>
-    · JCPM Participações e Empreendimentos SA</p>
+  <p>Gerado automaticamente a partir da
+    <a href="https://www.notion.so/3569d5bf2aa480fe98ebdd2ecd405957" target="_blank">
+    Programação da Semana no Notion</a>
+    · JCPM Shoppings</p>
 </div>
 
 </body>
