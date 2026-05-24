@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   isSameMonth, isToday, parseISO, isSameDay, addMonths, subMonths } from 'date-fns'
+import { createGoogleCalendarEvent } from '../lib/googleCalendar'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -236,25 +237,54 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
   const [endTime, setEndTime] = useState('09:00')
   const [location, setLocation] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [googleSynced, setGoogleSynced] = useState(false)
 
   const dateStr = format(date, 'yyyy-MM-dd')
   const autoGuard = guardPattern ? getGuardForDate(date, guardPattern) : null
 
   async function save(e) {
     e.preventDefault()
+    setError('')
     setSaving(true)
-    await supabase.from('calendar_events').insert({
-      family_id: familyId,
-      child_id: childId,
-      title,
-      description: description || null,
-      start_at: `${dateStr}T${startTime}:00`,
-      end_at: `${dateStr}T${endTime}:00`,
-      location: location || null,
-      source: 'manual',
-    })
-    setSaving(false)
-    onSaved()
+
+    try {
+      const startAt = `${dateStr}T${startTime}:00`
+      const endAt = `${dateStr}T${endTime}:00`
+
+      const { data: saved, error: dbError } = await supabase
+        .from('calendar_events')
+        .insert({
+          family_id: familyId,
+          child_id: childId,
+          title,
+          description: description || null,
+          start_at: startAt,
+          end_at: endAt,
+          location: location || null,
+          source: 'manual',
+        })
+        .select()
+        .single()
+
+      if (dbError) throw dbError
+
+      // Sync to Google Calendar using provider token
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.provider_token
+      if (accessToken && saved) {
+        const googleId = await createGoogleCalendarEvent(accessToken, { title, description, location, start_at: startAt, end_at: endAt })
+        if (googleId) {
+          await supabase.from('calendar_events').update({ google_event_id: googleId }).eq('id', saved.id)
+          setGoogleSynced(true)
+        }
+      }
+
+      onSaved()
+    } catch (err) {
+      setError(err.message || 'Erro ao salvar evento. Tente novamente.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -294,6 +324,9 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
           <textarea placeholder="Observações (opcional)" value={description} onChange={e => setDescription(e.target.value)} rows={2}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+          )}
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
