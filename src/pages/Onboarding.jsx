@@ -32,7 +32,7 @@ export default function Onboarding() {
   const [coparentName, setCoparentName] = useState('')
   const [coparentEmail, setCoparentEmail] = useState('')
   const [coparentColor, setCoparentColor] = useState('#10b981')
-  const [referenceDate, setReferenceDate] = useState('2026-05-20') // Tuesday
+  const [referenceDate, setReferenceDate] = useState('2026-05-20')
   const [referenceGuardian, setReferenceGuardian] = useState('mother')
 
   async function handleFinish() {
@@ -98,13 +98,11 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 p-4">
       <div className="w-full max-w-lg">
-        {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-brand-700">Configurar o Compasso</h1>
           <p className="text-gray-500 text-sm mt-1">Passo {step + 1} de {STEPS.length}</p>
         </div>
 
-        {/* Step indicator */}
         <div className="flex gap-1 mb-6">
           {STEPS.map((label, i) => (
             <div key={i} className="flex-1">
@@ -150,7 +148,7 @@ export default function Onboarding() {
               <div>
                 <label className="text-xs font-medium text-gray-500 mb-1 block">Turma / Ano</label>
                 <input type="text" value={grade} onChange={e => setGrade(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:r-brand-300" />
               </div>
             </div>
           )}
