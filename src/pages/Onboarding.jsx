@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useFamily } from '../context/FamilyContext'
-import { format } from 'date-fns'
 
 const STEPS = ['Família', 'Criança', 'Você', 'Guarda']
 
@@ -40,100 +39,36 @@ export default function Onboarding() {
     setError('')
     setLoading(true)
     try {
-      // Gerar UUIDs no cliente para evitar problemas com RETURNING + RLS
       const familyId = crypto.randomUUID()
       const myMemberId = crypto.randomUUID()
       const coparentMemberId = crypto.randomUUID()
       const childId = crypto.randomUUID()
+      const refMemberId = referenceGuardian === yourRole
+        ? myMemberId
+        : (coparentName ? coparentMemberId : myMemberId)
 
-      // 1. Create family (sem .select() para evitar conflito com RLS)
-      const { error: familyErr } = await supabase
-        .from('families')
-        .insert({ id: familyId, name: familyName || `Família ${childName}` })
-      if (familyErr) throw familyErr
-
-      // 2. Add current user as family member
-      const { error: memberErr } = await supabase
-        .from('family_members')
-        .insert({
-          id: myMemberId,
-          family_id: familyId,
-          user_id: user.id,
-          name: yourName || user.email,
-          email: user.email,
-          role: yourRole,
-          color: yourColor,
-        })
-      if (memberErr) throw memberErr
-
-      // 3. Add coparent (invited, no user_id yet)
-      if (coparentName) {
-        const { error: cpErr } = await supabase
-          .from('family_members')
-          .insert({
-            id: coparentMemberId,
-            family_id: familyId,
-            user_id: null,
-            name: coparentName,
-            email: coparentEmail || null,
-            role: yourRole === 'mother' ? 'father' : 'mother',
-            color: coparentColor,
-          })
-        if (cpErr) throw cpErr
-      }
-
-      // 4. Create child
-      const { error: childErr } = await supabase
-        .from('children')
-        .insert({
-          id: childId,
-          family_id: familyId,
-          name: childName,
-          birth_date: birthDate,
-          school: school || null,
-          grade: grade || null,
-        })
-      if (childErr) throw childErr
-
-      // 5. Create guard pattern
-      const refMemberId = referenceGuardian === yourRole ? myMemberId : (coparentName ? coparentMemberId : myMemberId)
-      const { error: patternErr } = await supabase
-        .from('guard_patterns')
-        .insert({
-          family_id: familyId,
-          child_id: childId,
-          pattern_type: 'alternating_weekly',
-          switch_day: 2, // Tuesday
-          reference_date: referenceDate,
-          reference_guardian: referenceGuardian,
-          reference_member_id: refMemberId || myMemberId,
-        })
-      if (patternErr) throw patternErr
-
-      // 6. Seed initial events
-      const events = [
-        {
-          family_id: familyId,
-          child_id: childId,
-          title: 'Piquenique Literário CBV',
-          description: 'Turno da manhã',
-          start_at: '2026-05-21T08:00:00',
-          end_at: '2026-05-21T12:00:00',
-          location: 'CBV Jaqueira',
-          source: 'manual',
-        },
-        {
-          family_id: familyId,
-          child_id: childId,
-          title: 'São João + Festa Junina CBV',
-          description: 'Anos Iniciais Jaqueira',
-          start_at: '2026-06-06T13:00:00',
-          end_at: '2026-06-06T15:00:00',
-          location: 'CBV Jaqueira',
-          source: 'manual',
-        },
-      ]
-      await supabase.from('calendar_events').insert(events)
+      const { error } = await supabase.rpc('create_family_onboarding', {
+        p_family_id: familyId,
+        p_family_name: familyName || `Família ${childName}`,
+        p_my_member_id: myMemberId,
+        p_my_name: yourName || user.email,
+        p_my_email: user.email,
+        p_my_role: yourRole,
+        p_my_color: yourColor,
+        p_coparent_member_id: coparentMemberId,
+        p_coparent_name: coparentName || '',
+        p_coparent_email: coparentEmail || '',
+        p_coparent_color: coparentColor,
+        p_child_id: childId,
+        p_child_name: childName,
+        p_child_birth_date: birthDate,
+        p_child_school: school || '',
+        p_child_grade: grade || '',
+        p_reference_date: referenceDate,
+        p_reference_guardian: referenceGuardian,
+        p_reference_member_id: refMemberId,
+      })
+      if (error) throw error
 
       await reload()
       navigate('/')
