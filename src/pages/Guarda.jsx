@@ -13,7 +13,8 @@ export default function Guarda() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
-  const [tab, setTab] = useState('calendar') // 'calendar' | 'swaps'
+  const [showManualForm, setShowManualForm] = useState(false)
+  const [tab, setTab] = useState('calendar')
 
   useEffect(() => {
     if (!isSupabaseConfigured || !family) return
@@ -29,22 +30,37 @@ export default function Guarda() {
     setSwaps(data || [])
   }
 
-  // Calendar grid
+  function getManualOverride(day) {
+    const dayStr = format(day, 'yyyy-MM-dd')
+    for (const s of swaps) {
+      if (!s.reason?.startsWith('[override:')) continue
+      const start = s.requested_date
+      const end = s.proposed_exchange_date || s.requested_date
+      if (dayStr >= start && dayStr <= end) {
+        return s.reason.match(/\[override:(mother|father)\]/)?.[1] || null
+      }
+    }
+    return null
+  }
+
+  function getDayStyle(day) {
+    if (!guardPattern) return {}
+    const override = getManualOverride(day)
+    const guardian = override || getGuardForDate(day, guardPattern)
+    if (!guardian) return {}
+    const color = GUARDIAN_COLORS[guardian]
+    return {
+      backgroundColor: color.lightHex,
+      ...(override ? { outline: `2px solid ${color.hex}`, outlineOffset: '-2px' } : {}),
+    }
+  }
+
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 })
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
 
-  function getDayStyle(day) {
-    if (!guardPattern) return {}
-    const guardian = getGuardForDate(day, guardPattern)
-    if (!guardian) return {}
-    const color = GUARDIAN_COLORS[guardian]
-    return { backgroundColor: color.lightHex }
-  }
-
-  // Weekly summary for this month
   const weeklySummary = []
   if (guardPattern) {
     let weekStart = new Date(gridStart)
@@ -52,11 +68,7 @@ export default function Guarda() {
       const guardian = getGuardForDate(weekStart, guardPattern)
       const weekEnd = new Date(weekStart)
       weekEnd.setDate(weekEnd.getDate() + 6)
-      weeklySummary.push({
-        start: new Date(weekStart),
-        end: weekEnd,
-        guardian,
-      })
+      weeklySummary.push({ start: new Date(weekStart), end: weekEnd, guardian })
       weekStart = new Date(weekStart)
       weekStart.setDate(weekStart.getDate() + 7)
     }
@@ -76,13 +88,18 @@ export default function Guarda() {
             </p>
           )}
         </div>
-        <button onClick={() => setShowSwapForm(true)}
-          className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-          Solicitar troca
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowManualForm(true)}
+            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+            Ajuste manual
+          </button>
+          <button onClick={() => setShowSwapForm(true)}
+            className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+            Solicitar troca
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
         {[{ id: 'calendar', label: 'Calendário' }, { id: 'swaps', label: 'Trocas' }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -94,8 +111,7 @@ export default function Guarda() {
 
       {tab === 'calendar' && (
         <>
-          {/* Guard legend */}
-          <div className="flex items-center gap-6 mb-4 text-sm">
+          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
             {['mother', 'father'].map(g => (
               <div key={g} className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded border" style={{ backgroundColor: GUARDIAN_COLORS[g].lightHex, borderColor: GUARDIAN_COLORS[g].hex }} />
@@ -103,13 +119,12 @@ export default function Guarda() {
               </div>
             ))}
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border-2 border-dashed border-gray-400" />
-              <span className="text-gray-600">Troca aceita</span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: GUARDIAN_COLORS['mother'].lightHex, outline: `2px solid ${GUARDIAN_COLORS['mother'].hex}`, outlineOffset: '-2px' }} />
+              <span className="text-gray-600">Ajuste manual</span>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6">
-            {/* Month nav */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,20 +141,17 @@ export default function Guarda() {
               </button>
             </div>
 
-            {/* Weekday headers */}
             <div className="grid grid-cols-7 border-b border-gray-100">
               {WEEKDAYS.map(d => (
                 <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
               ))}
             </div>
 
-            {/* Days */}
             <div className="grid grid-cols-7">
               {days.map((day, i) => {
                 const isCurrentMonth = isSameMonth(day, currentMonth)
                 const isTodayDay = isToday(day)
                 const style = isCurrentMonth ? getDayStyle(day) : {}
-                // Highlight Tuesday (switch day) with a dot
                 const isTuesday = getDay(day) === 2
 
                 return (
@@ -159,7 +171,6 @@ export default function Guarda() {
             </div>
           </div>
 
-          {/* Weekly breakdown */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <h3 className="font-semibold text-gray-800 mb-3">Semanas do mês</h3>
             <div className="space-y-2">
@@ -183,28 +194,156 @@ export default function Guarda() {
       )}
 
       {tab === 'swaps' && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-800 mb-4">Histórico de trocas</h3>
-          {swaps.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400 text-sm">Nenhuma troca registrada ainda</p>
-              <button onClick={() => setShowSwapForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
-                Solicitar primeira troca
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {swaps.map(swap => (
-                <SwapCard key={swap.id} swap={swap} members={members} family={family} onUpdate={loadSwaps} />
-              ))}
+        <div className="space-y-4">
+          {swaps.some(s => s.reason?.startsWith('[override:')) && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="font-semibold text-gray-800 mb-4">Ajustes manuais</h3>
+              <div className="space-y-3">
+                {swaps.filter(s => s.reason?.startsWith('[override:')).map(swap => (
+                  <OverrideCard key={swap.id} swap={swap} onUpdate={loadSwaps} />
+                ))}
+              </div>
             </div>
           )}
+
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="font-semibold text-gray-800 mb-4">Histórico de trocas</h3>
+            {swaps.filter(s => !s.reason?.startsWith('[override:')).length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-400 text-sm">Nenhuma troca registrada ainda</p>
+                <button onClick={() => setShowSwapForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
+                  Solicitar primeira troca
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {swaps.filter(s => !s.reason?.startsWith('[override:')).map(swap => (
+                  <SwapCard key={swap.id} swap={swap} members={members} family={family} onUpdate={loadSwaps} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {showSwapForm && (
         <SwapForm familyId={family?.id} onClose={() => setShowSwapForm(false)} onSaved={() => { setShowSwapForm(false); loadSwaps() }} />
       )}
+      {showManualForm && (
+        <ManualOverrideForm familyId={family?.id} members={members} onClose={() => setShowManualForm(false)} onSaved={() => { setShowManualForm(false); loadSwaps() }} />
+      )}
+    </div>
+  )
+}
+
+function OverrideCard({ swap, onUpdate }) {
+  const guardian = swap.reason?.match(/\[override:(mother|father)\]/)?.[1]
+  const color = guardian ? GUARDIAN_COLORS[guardian] : null
+  const note = swap.reason?.replace(/\[override:(mother|father)\]\s*/, '') || ''
+
+  async function remove() {
+    await supabase.from('guard_swaps').delete().eq('id', swap.id)
+    onUpdate()
+  }
+
+  return (
+    <div className="p-4 rounded-xl border border-gray-100 flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        <div className="w-3 h-3 rounded-full mt-1 flex-shrink-0" style={color ? { backgroundColor: color.hex } : {}} />
+        <div>
+          <p className="text-sm font-medium text-gray-800">
+            {guardian ? GUARDIAN_LABELS[guardian] : '–'}
+            {' · '}
+            {swap.requested_date === swap.proposed_exchange_date || !swap.proposed_exchange_date
+              ? format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM/yyyy')
+              : `${format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM')} – ${format(new Date(swap.proposed_exchange_date + 'T12:00:00'), 'dd/MM/yyyy')}`}
+          </p>
+          {note && <p className="text-xs text-gray-500 mt-0.5">{note}</p>}
+        </div>
+      </div>
+      <button onClick={remove} className="text-xs text-red-400 hover:text-red-600 flex-shrink-0">Remover</button>
+    </div>
+  )
+}
+
+function ManualOverrideForm({ familyId, members, onClose, onSaved }) {
+  const { getCurrentUserMember } = useFamily()
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [guardian, setGuardian] = useState('mother')
+  const [note, setNote] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function save(e) {
+    e.preventDefault()
+    setSaving(true)
+    const me = getCurrentUserMember()
+    await supabase.from('guard_swaps').insert({
+      family_id: familyId,
+      requested_date: startDate,
+      proposed_exchange_date: endDate || startDate,
+      reason: `[override:${guardian}]${note ? ' ' + note : ''}`,
+      requested_by: me?.id || null,
+      status: 'accepted',
+      resolved_at: new Date().toISOString(),
+    })
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Ajuste manual de guarda</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mb-4">Define manualmente quem tem a guarda em um período, sobrepondo o calendário padrão.</p>
+        <form onSubmit={save} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">De</label>
+              <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); if (!endDate) setEndDate(e.target.value) }} required
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Até</label>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Quem fica com a guarda?</label>
+            <div className="flex gap-3">
+              {['mother', 'father'].map(role => (
+                <button key={role} type="button" onClick={() => setGuardian(role)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${guardian === role ? 'bg-brand-50 border-brand-400 text-brand-700' : 'border-gray-200 text-gray-600'}`}>
+                  {role === 'mother' ? '💙 Mãe' : '💚 Pai'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Observação (opcional)</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Ex: férias escolares"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving || !startDate}
+              className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50">
+              {saving ? 'Salvando…' : 'Salvar ajuste'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
