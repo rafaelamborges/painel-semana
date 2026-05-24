@@ -7,11 +7,6 @@ export default function ProtectedRoute({ children }) {
   const { user, loading: authLoading } = useAuth()
   const { onboardingDone, loading: familyLoading } = useFamily()
 
-  if (!isSupabaseConfigured) {
-    // Show app in demo mode without Supabase
-    return children
-  }
-
   if (authLoading || familyLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-50">
@@ -25,7 +20,7 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (onboardingDone === false) return <Navigate to="/onboarding" replace />
+  if (onboardingDone === false || onboardingDone === null) return <Navigate to="/onboarding" replace />
 
   return children
 }

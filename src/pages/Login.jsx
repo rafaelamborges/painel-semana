@@ -17,10 +17,6 @@ export default function Login() {
     if (user) navigate('/')
   }, [user, navigate])
 
-  if (!isSupabaseConfigured) {
-    return <DemoMode />
-  }
-
   async function handleGoogle() {
     setError('')
     setLoading(true)
@@ -66,6 +62,12 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-brand-700">Compasso</h1>
           <p className="text-gray-500 mt-1 text-sm">Acompanhamento infantil para famílias</p>
         </div>
+
+        {!isSupabaseConfigured && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
+            ⚠️ Variáveis de ambiente não encontradas. Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> no Vercel e faça redeploy.
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">
