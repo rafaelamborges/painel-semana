@@ -40,20 +40,23 @@ export default function Onboarding() {
     setError('')
     setLoading(true)
     try {
-      // 1. Create family
-      const { data: familyData, error: familyErr } = await supabase
+      // Gerar UUIDs no cliente para evitar problemas com RETURNING + RLS
+      const familyId = crypto.randomUUID()
+      const myMemberId = crypto.randomUUID()
+      const coparentMemberId = crypto.randomUUID()
+      const childId = crypto.randomUUID()
+
+      // 1. Create family (sem .select() para evitar conflito com RLS)
+      const { error: familyErr } = await supabase
         .from('families')
-        .insert({ name: familyName || `Família ${childName}` })
-        .select()
-        .single()
+        .insert({ id: familyId, name: familyName || `Família ${childName}` })
       if (familyErr) throw familyErr
 
-      const familyId = familyData.id
-
       // 2. Add current user as family member
-      const { data: myMember, error: memberErr } = await supabase
+      const { error: memberErr } = await supabase
         .from('family_members')
         .insert({
+          id: myMemberId,
           family_id: familyId,
           user_id: user.id,
           name: yourName || user.email,
@@ -61,16 +64,14 @@ export default function Onboarding() {
           role: yourRole,
           color: yourColor,
         })
-        .select()
-        .single()
       if (memberErr) throw memberErr
 
       // 3. Add coparent (invited, no user_id yet)
-      let coparentMember = null
       if (coparentName) {
-        const { data: cp, error: cpErr } = await supabase
+        const { error: cpErr } = await supabase
           .from('family_members')
           .insert({
+            id: coparentMemberId,
             family_id: familyId,
             user_id: null,
             name: coparentName,
@@ -78,38 +79,34 @@ export default function Onboarding() {
             role: yourRole === 'mother' ? 'father' : 'mother',
             color: coparentColor,
           })
-          .select()
-          .single()
         if (cpErr) throw cpErr
-        coparentMember = cp
       }
 
       // 4. Create child
-      const { data: childData, error: childErr } = await supabase
+      const { error: childErr } = await supabase
         .from('children')
         .insert({
+          id: childId,
           family_id: familyId,
           name: childName,
           birth_date: birthDate,
           school: school || null,
           grade: grade || null,
         })
-        .select()
-        .single()
       if (childErr) throw childErr
 
       // 5. Create guard pattern
-      const refMemberId = referenceGuardian === yourRole ? myMember.id : coparentMember?.id
+      const refMemberId = referenceGuardian === yourRole ? myMemberId : (coparentName ? coparentMemberId : myMemberId)
       const { error: patternErr } = await supabase
         .from('guard_patterns')
         .insert({
           family_id: familyId,
-          child_id: childData.id,
+          child_id: childId,
           pattern_type: 'alternating_weekly',
           switch_day: 2, // Tuesday
           reference_date: referenceDate,
           reference_guardian: referenceGuardian,
-          reference_member_id: refMemberId || myMember.id,
+          reference_member_id: refMemberId || myMemberId,
         })
       if (patternErr) throw patternErr
 
@@ -117,7 +114,7 @@ export default function Onboarding() {
       const events = [
         {
           family_id: familyId,
-          child_id: childData.id,
+          child_id: childId,
           title: 'Piquenique Literário CBV',
           description: 'Turno da manhã',
           start_at: '2026-05-21T08:00:00',
@@ -127,7 +124,7 @@ export default function Onboarding() {
         },
         {
           family_id: familyId,
-          child_id: childData.id,
+          child_id: childId,
           title: 'São João + Festa Junina CBV',
           description: 'Anos Iniciais Jaqueira',
           start_at: '2026-06-06T13:00:00',
