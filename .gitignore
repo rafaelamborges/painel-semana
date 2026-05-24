@@ -1,11 +1,35 @@
-# Credenciais — nunca enviar ao GitHub
+# Supabase / credenciais — nunca enviar ao GitHub
 config.json
+.env
+.env.local
+.env.production
 
-# Python
+# Dependencies
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python (legado)
 __pycache__/
 *.pyc
 *.pyo
-
-# Windows
-Thumbs.db
-desktop.ini
