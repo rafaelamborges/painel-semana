@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { FamilyProvider } from './context/FamilyContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import RequireAuth from './components/RequireAuth'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
@@ -23,7 +24,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={
-              <ProtectedRoute><Onboarding /></ProtectedRoute>
+              <RequireAuth><Onboarding /></RequireAuth>
             } />
             <Route path="/" element={
               <ProtectedRoute>
