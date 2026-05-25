@@ -1,8 +1,15 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
 const FamilyContext = createContext(null)
+
+function hexToRgba(hex, alpha = 0.15) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export function FamilyProvider({ children }) {
   const { user } = useAuth()
@@ -12,6 +19,17 @@ export function FamilyProvider({ children }) {
   const [guardPattern, setGuardPattern] = useState(null)
   const [loading, setLoading] = useState(true)
   const [onboardingDone, setOnboardingDone] = useState(null)
+
+  const guardianColors = useMemo(() => {
+    const motherMember = members.find(m => m.role === 'mother')
+    const fatherMember = members.find(m => m.role === 'father')
+    const motherHex = motherMember?.color || '#3b82f6'
+    const fatherHex = fatherMember?.color || '#10b981'
+    return {
+      mother: { hex: motherHex, lightHex: hexToRgba(motherHex) },
+      father: { hex: fatherHex, lightHex: hexToRgba(fatherHex) },
+    }
+  }, [members])
 
   const loadFamily = useCallback(async () => {
     if (!user || !isSupabaseConfigured) {
@@ -96,6 +114,7 @@ export function FamilyProvider({ children }) {
       getMemberById,
       getCurrentUserMember,
       setGuardPattern,
+      guardianColors,
     }}>
       {children}
     </FamilyContext.Provider>
