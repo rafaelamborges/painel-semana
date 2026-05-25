@@ -15,6 +15,7 @@ import Conquistas from './pages/Conquistas'
 import Decisoes from './pages/Decisoes'
 import Emails from './pages/Emails'
 import Lembretes from './pages/Lembretes'
+import Documentos from './pages/Documentos'
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="decisoes" element={<Decisoes />} />
               <Route path="emails" element={<Emails />} />
               <Route path="lembretes" element={<Lembretes />} />
+              <Route path="documentos" element={<Documentos />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
