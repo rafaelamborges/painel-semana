@@ -5,12 +5,12 @@ import { createGoogleCalendarEvent } from '../lib/googleCalendar'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, getGuardPeriodsForMonth, GUARDIAN_COLORS, GUARDIAN_LABELS } from '../lib/guard'
+import { getGuardForDate, getGuardPeriodsForMonth, GUARDIAN_LABELS } from '../lib/guard'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 export default function Agenda() {
-  const { family, child, guardPattern } = useFamily()
+  const { family, child, guardPattern, guardianColors } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState([])
   const [selectedDay, setSelectedDay] = useState(new Date())
@@ -59,12 +59,12 @@ export default function Agenda() {
   function getDayGuardColor(day) {
     if (!guardPattern) return null
     const guardian = getGuardForDate(day, guardPattern)
-    return guardian ? GUARDIAN_COLORS[guardian] : null
+    return guardian ? guardianColors[guardian] : null
   }
 
   const selectedEvents = getEventsForDay(selectedDay)
   const selectedGuard = guardPattern ? getGuardForDate(selectedDay, guardPattern) : null
-  const selectedGuardColor = selectedGuard ? GUARDIAN_COLORS[selectedGuard] : null
+  const selectedGuardColor = selectedGuard ? guardianColors[selectedGuard] : null
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -90,7 +90,7 @@ export default function Agenda() {
           <span>Guarda:</span>
           {['mother', 'father'].map(g => (
             <span key={g} className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: GUARDIAN_COLORS[g].lightHex, border: `1.5px solid ${GUARDIAN_COLORS[g].hex}` }} />
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: guardianColors[g].lightHex, border: `1.5px solid ${guardianColors[g].hex}` }} />
               {GUARDIAN_LABELS[g]}
             </span>
           ))}
@@ -151,7 +151,7 @@ export default function Agenda() {
                 <div className="mt-0.5 space-y-0.5">
                   {dayEvents.slice(0, 2).map(ev => {
                     const evGuard = guardPattern ? getGuardForDate(parseISO(ev.start_at), guardPattern) : null
-                    const evC = evGuard ? GUARDIAN_COLORS[evGuard].hex : '#6d28d9'
+                    const evC = evGuard ? guardianColors[evGuard].hex : '#6d28d9'
                     return (
                       <div key={ev.id} className="truncate text-[10px] px-1 py-0.5 rounded text-white font-medium"
                         style={{ backgroundColor: evC }}>
@@ -211,8 +211,9 @@ export default function Agenda() {
 }
 
 function EventCard({ event, guardPattern }) {
+  const { guardianColors } = useFamily()
   const evGuard = guardPattern ? getGuardForDate(parseISO(event.start_at), guardPattern) : null
-  const evColor = evGuard ? GUARDIAN_COLORS[evGuard] : null
+  const evColor = evGuard ? guardianColors[evGuard] : null
   return (
     <div className="flex items-start gap-3 p-3 rounded-xl border border-gray-100">
       <div className="w-1 h-full min-h-[40px] rounded-full flex-shrink-0 mt-1"
@@ -231,6 +232,7 @@ function EventCard({ event, guardPattern }) {
 }
 
 function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) {
+  const { guardianColors } = useFamily()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [startTime, setStartTime] = useState('08:00')
@@ -300,8 +302,8 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
         </div>
         {autoGuard && (
           <div className="mb-4 p-2.5 rounded-lg text-xs font-medium flex items-center gap-2"
-            style={{ backgroundColor: GUARDIAN_COLORS[autoGuard].lightHex, color: GUARDIAN_COLORS[autoGuard].hex }}>
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: GUARDIAN_COLORS[autoGuard].hex }} />
+            style={{ backgroundColor: guardianColors[autoGuard].lightHex, color: guardianColors[autoGuard].hex }}>
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: guardianColors[autoGuard].hex }} />
             Responsável automático: {GUARDIAN_LABELS[autoGuard]}
           </div>
         )}

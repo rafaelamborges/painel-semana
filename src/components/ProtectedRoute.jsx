@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (onboardingDone === false || onboardingDone === null) return <Navigate to="/onboarding" replace />
+  if (onboardingDone === false) return <Navigate to="/onboarding" replace />
 
   return children
 }

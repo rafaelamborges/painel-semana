@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOf
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, GUARDIAN_COLORS, GUARDIAN_LABELS } from '../lib/guard'
+import { getGuardForDate, GUARDIAN_LABELS } from '../lib/guard'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -18,7 +18,7 @@ const ROLE_LABELS = {
 }
 
 export default function Guarda() {
-  const { family, child, members, guardPattern, setGuardPattern, reload } = useFamily()
+  const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
@@ -57,7 +57,7 @@ export default function Guarda() {
     const override = getManualOverride(day)
     const guardian = override || getGuardForDate(day, guardPattern)
     if (!guardian) return {}
-    const color = GUARDIAN_COLORS[guardian]
+    const color = guardianColors[guardian]
     return {
       backgroundColor: color.lightHex,
       ...(override ? { outline: `2px solid ${color.hex}`, outlineOffset: '-2px' } : {}),
@@ -84,7 +84,7 @@ export default function Guarda() {
   }
 
   const currentGuard = guardPattern ? getGuardForDate(new Date(), guardPattern) : null
-  const currentGuardColor = currentGuard ? GUARDIAN_COLORS[currentGuard] : null
+  const currentGuardColor = currentGuard ? guardianColors[currentGuard] : null
 
   const tabs = [
     { id: 'calendar', label: 'Calendário' },
@@ -130,12 +130,12 @@ export default function Guarda() {
           <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
             {['mother', 'father'].map(g => (
               <div key={g} className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border" style={{ backgroundColor: GUARDIAN_COLORS[g].lightHex, borderColor: GUARDIAN_COLORS[g].hex }} />
+                <div className="w-4 h-4 rounded border" style={{ backgroundColor: guardianColors[g].lightHex, borderColor: guardianColors[g].hex }} />
                 <span className="text-gray-600">{GUARDIAN_LABELS[g]}</span>
               </div>
             ))}
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: GUARDIAN_COLORS['mother'].lightHex, outline: `2px solid ${GUARDIAN_COLORS['mother'].hex}`, outlineOffset: '-2px' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: guardianColors['mother'].lightHex, outline: `2px solid ${guardianColors['mother'].hex}`, outlineOffset: '-2px' }} />
               <span className="text-gray-600">Ajuste manual</span>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function Guarda() {
             <h3 className="font-semibold text-gray-800 mb-3">Semanas do mês</h3>
             <div className="space-y-2">
               {weeklySummary.map((week, i) => {
-                const c = week.guardian ? GUARDIAN_COLORS[week.guardian] : null
+                const c = week.guardian ? guardianColors[week.guardian] : null
                 return (
                   <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl" style={c ? { backgroundColor: c.lightHex } : {}}>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={c ? { backgroundColor: c.hex } : {}} />
@@ -249,8 +249,9 @@ export default function Guarda() {
 }
 
 function OverrideCard({ swap, familyId, guardPattern, members, setGuardPattern, onUpdate }) {
+  const { guardianColors } = useFamily()
   const guardian = swap.reason?.match(/\[override:(mother|father)\]/)?.[1]
-  const color = guardian ? GUARDIAN_COLORS[guardian] : null
+  const color = guardian ? guardianColors[guardian] : null
   const note = swap.reason?.replace(/\[override:(mother|father)\]\s*/, '') || ''
   const [confirming, setConfirming] = useState(false)
   const [reorganizing, setReorganizing] = useState(false)
@@ -489,6 +490,7 @@ function HistoryTab({ swaps, members }) {
 }
 
 function HistoryEntry({ swap, members }) {
+  const { guardianColors } = useFamily()
   const requester = members.find(m => m.id === swap.requested_by)
   const isOverride = swap.reason?.startsWith('[override:')
   const isReorganized = swap.reason?.startsWith('[reorganized:')
@@ -497,7 +499,7 @@ function HistoryEntry({ swap, members }) {
 
   if (isOverride) {
     const guardian = swap.reason?.match(/\[override:(mother|father)\]/)?.[1]
-    const color = guardian ? GUARDIAN_COLORS[guardian] : null
+    const color = guardian ? guardianColors[guardian] : null
     const note = swap.reason?.replace(/\[override:(mother|father)\]\s*/, '')
     const dateLabel = swap.requested_date === swap.proposed_exchange_date || !swap.proposed_exchange_date
       ? format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM/yyyy')
@@ -508,7 +510,7 @@ function HistoryEntry({ swap, members }) {
     detail = note || null
   } else if (isReorganized) {
     const guardian = swap.reason?.match(/\[reorganized:(mother|father)\]/)?.[1]
-    const color = guardian ? GUARDIAN_COLORS[guardian] : null
+    const color = guardian ? guardianColors[guardian] : null
     iconBg = color?.hex || '#8b5cf6'
     icon = <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
     const note = swap.reason?.replace(/\[reorganized:(mother|father)\]\s*/, '')
