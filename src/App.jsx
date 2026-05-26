@@ -13,6 +13,7 @@ import Saude from './pages/Saude'
 import Decisoes from './pages/Decisoes'
 import Lembretes from './pages/Lembretes'
 import Documentos from './pages/Documentos'
+import Join from './pages/Join'
 
 export default function App() {
   return (
@@ -23,6 +24,9 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={
               <RequireAuth><Onboarding /></RequireAuth>
+            } />
+            <Route path="/join/:code" element={
+              <RequireAuth><Join /></RequireAuth>
             } />
             <Route path="/" element={
               <ProtectedRoute>

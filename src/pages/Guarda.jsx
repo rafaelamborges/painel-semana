@@ -332,8 +332,12 @@ function OverrideCard({ swap, familyId, guardPattern, members, setGuardPattern, 
   )
 }
 
+const MAX_MEMBERS = 6
+
 function MembersTab({ familyId, members, onMembersChanged }) {
   const [showForm, setShowForm] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
+  const atLimit = members.length >= MAX_MEMBERS
 
   async function removeMember(id) {
     await supabase.from('family_members').delete().eq('id', id)
@@ -344,11 +348,30 @@ function MembersTab({ familyId, members, onMembersChanged }) {
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-800">Membros da família</h3>
-          <button onClick={() => setShowForm(true)}
-            className="px-3 py-1.5 bg-brand-600 text-white rounded-xl text-xs font-medium hover:bg-brand-700 transition-colors">
-            + Adicionar membro
-          </button>
+          <div>
+            <h3 className="font-semibold text-gray-800">Membros da família</h3>
+            <p className="text-xs text-gray-400 mt-0.5">{members.length} / {MAX_MEMBERS} membros</p>
+          </div>
+          <div className="flex gap-2">
+            {!atLimit && (
+              <>
+                <button onClick={() => setShowInvite(true)}
+                  className="px-3 py-1.5 border border-brand-300 text-brand-700 rounded-xl text-xs font-medium hover:bg-brand-50 transition-colors flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  Convidar
+                </button>
+                <button onClick={() => setShowForm(true)}
+                  className="px-3 py-1.5 bg-brand-600 text-white rounded-xl text-xs font-medium hover:bg-brand-700 transition-colors">
+                  + Adicionar
+                </button>
+              </>
+            )}
+            {atLimit && (
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">Limite atingido</span>
+            )}
+          </div>
         </div>
         <div className="space-y-3">
           {members.map(m => (
@@ -373,6 +396,84 @@ function MembersTab({ familyId, members, onMembersChanged }) {
       {showForm && (
         <AddMemberForm familyId={familyId} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); onMembersChanged() }} />
       )}
+      {showInvite && (
+        <InviteModal onClose={() => setShowInvite(false)} />
+      )}
+    </div>
+  )
+}
+
+function InviteModal({ onClose }) {
+  const [link, setLink] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    generateInvite()
+  }, [])
+
+  async function generateInvite() {
+    setLoading(true)
+    const { data, error } = await supabase.rpc('create_family_invite')
+    if (error || !data) {
+      setError(error?.message === 'member_limit' ? 'Limite de 6 membros atingido.' : 'Erro ao gerar convite.')
+      setLoading(false)
+      return
+    }
+    const base = window.location.origin
+    setLink(`${base}/join/${data}`)
+    setLoading(false)
+  }
+
+  async function copy() {
+    await navigator.clipboard.writeText(link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Convidar para o Compasso</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <p className="text-sm text-gray-500 mb-4">
+          Compartilhe este link. Ao abrir, a pessoa faz login e entra direto na família. Válido por 7 dias.
+        </p>
+
+        {loading && (
+          <div className="flex items-center justify-center py-6">
+            <div className="w-5 h-5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</p>
+        )}
+
+        {link && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+              <p className="flex-1 text-xs text-gray-600 truncate font-mono">{link}</p>
+            </div>
+            <button onClick={copy}
+              className={`w-full py-3 rounded-xl text-sm font-medium transition-colors ${
+                copied
+                  ? 'bg-green-600 text-white'
+                  : 'bg-brand-600 text-white hover:bg-brand-700'
+              }`}>
+              {copied ? '✓ Link copiado!' : 'Copiar link'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
