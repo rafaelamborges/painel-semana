@@ -5,12 +5,12 @@ import { createGoogleCalendarEvent } from '../lib/googleCalendar'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, getGuardPeriodsForMonth, GUARDIAN_LABELS } from '../lib/guard'
+import { getGuardForDate, getGuardPeriodsForMonth } from '../lib/guard'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 export default function Agenda() {
-  const { family, child, guardPattern, guardianColors } = useFamily()
+  const { family, child, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState([])
   const [selectedDay, setSelectedDay] = useState(new Date())
@@ -73,15 +73,17 @@ export default function Agenda() {
           <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
           <p className="text-sm text-gray-500 mt-0.5">Eventos de {child?.name}</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Novo evento
-        </button>
+        {permissions.canAdd && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Novo evento
+          </button>
+        )}
       </div>
 
       {/* Guard legend */}
@@ -91,7 +93,7 @@ export default function Agenda() {
           {['mother', 'father'].map(g => (
             <span key={g} className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: guardianColors[g].lightHex, border: `1.5px solid ${guardianColors[g].hex}` }} />
-              {GUARDIAN_LABELS[g]}
+              {guardianLabels[g]}
             </span>
           ))}
         </div>
@@ -177,12 +179,14 @@ export default function Agenda() {
             {selectedGuardColor && (
               <span className="ml-2 text-xs font-normal px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: selectedGuardColor.lightHex, color: selectedGuardColor.hex }}>
-                Guarda: {GUARDIAN_LABELS[selectedGuard]}
+                Guarda: {guardianLabels[selectedGuard]}
               </span>
             )}
           </h3>
-          <button onClick={() => { setSelectedDay(selectedDay); setShowForm(true) }}
-            className="text-xs text-brand-600 hover:underline">+ Evento</button>
+          {permissions.canAdd && (
+            <button onClick={() => { setSelectedDay(selectedDay); setShowForm(true) }}
+              className="text-xs text-brand-600 hover:underline">+ Evento</button>
+          )}
         </div>
         {selectedEvents.length === 0 ? (
           <p className="text-sm text-gray-400">Nenhum evento neste dia</p>
@@ -232,6 +236,7 @@ function EventCard({ event, guardPattern }) {
 }
 
 function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) {
+  const { guardianLabels } = useFamily()
   const { guardianColors } = useFamily()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -304,7 +309,7 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
           <div className="mb-4 p-2.5 rounded-lg text-xs font-medium flex items-center gap-2"
             style={{ backgroundColor: guardianColors[autoGuard].lightHex, color: guardianColors[autoGuard].hex }}>
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: guardianColors[autoGuard].hex }} />
-            Responsável automático: {GUARDIAN_LABELS[autoGuard]}
+            Responsável automático: {guardianLabels[autoGuard]}
           </div>
         )}
         <form onSubmit={save} className="space-y-3">

@@ -5,7 +5,7 @@ import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 export default function Decisoes() {
-  const { family, members } = useFamily()
+  const { family, members, permissions } = useFamily()
   const [decisions, setDecisions] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
@@ -36,13 +36,15 @@ export default function Decisoes() {
           <h1 className="text-2xl font-bold text-gray-900">Decisões compartilhadas</h1>
           <p className="text-sm text-gray-500 mt-0.5">A memória oficial da coparentalidade</p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Registrar decisão
-        </button>
+        {permissions.canAdd && (
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Registrar decisão
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -63,7 +65,7 @@ export default function Decisoes() {
           <p className="text-sm text-gray-400 mt-1">
             {!search && 'Registre as decisões acordadas entre os pais para manter um histórico claro'}
           </p>
-          {!search && (
+          {!search && permissions.canAdd && (
             <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
               Primeira decisão
             </button>

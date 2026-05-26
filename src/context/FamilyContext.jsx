@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { getPermissions } from '../lib/permissions'
 
 const FamilyContext = createContext(null)
 
@@ -19,6 +20,22 @@ export function FamilyProvider({ children }) {
   const [guardPattern, setGuardPattern] = useState(null)
   const [loading, setLoading] = useState(true)
   const [onboardingDone, setOnboardingDone] = useState(null)
+
+  const myAccessRole = useMemo(() => {
+    const myMember = members.find(m => m.user_id === user?.id)
+    return myMember?.access_role || 'viewer'
+  }, [members, user])
+
+  const permissions = useMemo(() => getPermissions(myAccessRole), [myAccessRole])
+
+  const guardianLabels = useMemo(() => {
+    const motherMember = members.find(m => m.role === 'mother')
+    const fatherMember = members.find(m => m.role === 'father')
+    return {
+      mother: motherMember?.name || 'Mamãe',
+      father: fatherMember?.name || 'Papai',
+    }
+  }, [members])
 
   const guardianColors = useMemo(() => {
     const motherMember = members.find(m => m.role === 'mother')
@@ -115,6 +132,9 @@ export function FamilyProvider({ children }) {
       getCurrentUserMember,
       setGuardPattern,
       guardianColors,
+      guardianLabels,
+      myAccessRole,
+      permissions,
     }}>
       {children}
     </FamilyContext.Provider>

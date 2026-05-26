@@ -4,7 +4,7 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getVaccineAlerts } from '../lib/pni'
-import { getGuardForDate, GUARDIAN_LABELS, GUARDIAN_COLORS } from '../lib/guard'
+import { getGuardForDate } from '../lib/guard'
 
 export default function Lembretes() {
   const { child, family, guardPattern } = useFamily()

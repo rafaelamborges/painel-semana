@@ -4,18 +4,18 @@ import { format, isToday, isTomorrow, differenceInDays, parseISO } from 'date-fn
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, GUARDIAN_LABELS, GUARDIAN_COLORS } from '../lib/guard'
+import { getGuardForDate } from '../lib/guard'
 import { getVaccineAlerts } from '../lib/pni'
 
 export default function Dashboard() {
-  const { child, family, members, guardPattern } = useFamily()
+  const { child, family, members, guardPattern, guardianColors, guardianLabels } = useFamily()
   const [events, setEvents] = useState([])
   const [therapyAlert, setTherapyAlert] = useState(null)
   const today = new Date()
 
   const currentGuard = guardPattern ? getGuardForDate(today, guardPattern) : null
-  const guardColor = currentGuard ? GUARDIAN_COLORS[currentGuard] : null
-  const guardLabel = currentGuard ? GUARDIAN_LABELS[currentGuard] : null
+  const guardColor = currentGuard ? guardianColors[currentGuard] : null
+  const guardLabel = currentGuard ? guardianLabels[currentGuard] : null
 
   const vaccineAlerts = child?.birth_date ? getVaccineAlerts(child.birth_date) : []
   const urgentVaccines = vaccineAlerts.filter(v => v.status === 'overdue').slice(0, 3)
@@ -117,7 +117,7 @@ export default function Dashboard() {
               {events.map(ev => {
                 const evDate = parseISO(ev.start_at)
                 const evGuard = guardPattern ? getGuardForDate(evDate, guardPattern) : null
-                const evColor = evGuard ? GUARDIAN_COLORS[evGuard] : null
+                const evColor = evGuard ? guardianColors[evGuard] : null
                 return (
                   <div key={ev.id} className="flex items-start gap-3">
                     <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0"

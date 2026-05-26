@@ -2,30 +2,26 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useFamily } from '../context/FamilyContext'
 import { getGuardForDate } from '../lib/guard'
-import { GUARDIAN_LABELS, GUARDIAN_COLORS } from '../lib/guard'
 
 const navItems = [
   { to: '/', label: 'Início', icon: HomeIcon, exact: true },
   { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
   { to: '/guarda', label: 'Guarda', icon: ShieldIcon },
   { to: '/saude', label: 'Saúde', icon: HeartIcon },
-  { to: '/terapia', label: 'Terapia', icon: BrainIcon },
-  { to: '/conquistas', label: 'Conquistas', icon: TrophyIcon },
   { to: '/documentos', label: 'Documentos', icon: FolderIcon },
   { to: '/decisoes', label: 'Decisões', icon: HandshakeIcon },
-  { to: '/emails', label: 'Emails', icon: EmailIcon },
   { to: '/lembretes', label: 'Lembretes', icon: BellIcon },
 ]
 
 export default function Sidebar({ open, onClose }) {
   const { signOut } = useAuth()
-  const { child, guardPattern } = useFamily()
+  const { child, guardPattern, guardianColors, guardianLabels } = useFamily()
   const navigate = useNavigate()
 
   const today = new Date()
   const currentGuard = guardPattern ? getGuardForDate(today, guardPattern) : null
-  const guardColor = currentGuard ? GUARDIAN_COLORS[currentGuard] : null
-  const guardLabel = currentGuard ? GUARDIAN_LABELS[currentGuard] : null
+  const guardColor = currentGuard ? guardianColors[currentGuard] : null
+  const guardLabel = currentGuard ? guardianLabels[currentGuard] : null
 
   async function handleSignOut() {
     await signOut()
