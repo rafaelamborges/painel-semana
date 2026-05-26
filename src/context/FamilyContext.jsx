@@ -23,7 +23,7 @@ export function FamilyProvider({ children }) {
 
   const myAccessRole = useMemo(() => {
     const myMember = members.find(m => m.user_id === user?.id)
-    return myMember?.access_role || 'viewer'
+    return myMember?.access_role || 'editor'
   }, [members, user])
 
   const permissions = useMemo(() => getPermissions(myAccessRole), [myAccessRole])
