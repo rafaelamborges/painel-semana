@@ -46,7 +46,7 @@ create policy "Family members manage files"
   );`
 
 export default function Documentos() {
-  const { family, child } = useFamily()
+  const { family, child, permissions } = useFamily()
   const [docs, setDocs] = useState([])
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
@@ -122,7 +122,7 @@ export default function Documentos() {
             </p>
           )}
         </div>
-        {!loading && docs.length < MAX_DOCS && (
+        {!loading && docs.length < MAX_DOCS && permissions.canAdd && (
           <button
             onClick={() => setShowUpload(true)}
             className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
@@ -156,18 +156,20 @@ export default function Documentos() {
           <p className="text-sm text-gray-400 mt-1">
             Adicione documentos importantes de {child?.name ?? 'sua criança'}
           </p>
-          <button
-            onClick={() => setShowUpload(true)}
-            className="mt-5 px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-          >
-            + Adicionar primeiro documento
-          </button>
+          {permissions.canAdd && (
+            <button
+              onClick={() => setShowUpload(true)}
+              className="mt-5 px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+            >
+              + Adicionar primeiro documento
+            </button>
+          )}
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {docs.map(doc => (
-              <DocCard key={doc.id} doc={doc} onOpen={openViewer} onDelete={deleteDoc} />
+              <DocCard key={doc.id} doc={doc} onOpen={openViewer} onDelete={deleteDoc} canDelete={permissions.canDelete} />
             ))}
           </div>
           {docs.length >= MAX_DOCS && (
@@ -194,7 +196,7 @@ export default function Documentos() {
   )
 }
 
-function DocCard({ doc, onOpen, onDelete }) {
+function DocCard({ doc, onOpen, onDelete, canDelete }) {
   const [thumbUrl, setThumbUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -252,7 +254,7 @@ function DocCard({ doc, onOpen, onDelete }) {
           <span className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">
             {doc.file_type === 'pdf' ? 'PDF' : 'Imagem'}
           </span>
-          {confirmDelete ? (
+          {canDelete && (confirmDelete ? (
             <div className="flex items-center gap-2">
               <button
                 onClick={e => { e.stopPropagation(); setConfirmDelete(false) }}
@@ -275,7 +277,7 @@ function DocCard({ doc, onOpen, onDelete }) {
             >
               Remover
             </button>
-          )}
+          ))}
         </div>
       </div>
     </div>

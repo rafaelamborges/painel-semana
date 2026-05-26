@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateVaccinationSchedule } from '../lib/pni'
 
 export default function Saude() {
-  const { child, family } = useFamily()
+  const { child, family, permissions } = useFamily()
   const [tab, setTab] = useState('vacinas')
   const [consultations, setConsultations] = useState([])
   const [administered, setAdministered] = useState([])
@@ -88,7 +88,7 @@ export default function Saude() {
               <div className="space-y-2">
                 {overdueVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="overdue"
-                    onAdminister={() => { setSelectedVaccine(v); setShowVaccineForm(true) }} />
+                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
                 ))}
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function Saude() {
               <div className="space-y-2">
                 {upcomingVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="upcoming"
-                    onAdminister={() => { setSelectedVaccine(v); setShowVaccineForm(true) }} />
+                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
                 ))}
               </div>
             </div>
@@ -127,15 +127,17 @@ export default function Saude() {
 
       {tab === 'consultas' && (
         <div>
-          <div className="flex justify-end mb-4">
-            <button onClick={() => setShowConsultationForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Nova consulta
-            </button>
-          </div>
+          {permissions.canAdd && (
+            <div className="flex justify-end mb-4">
+              <button onClick={() => setShowConsultationForm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Nova consulta
+              </button>
+            </div>
+          )}
 
           {consultations.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
@@ -370,6 +372,7 @@ const SEVERITY_CONFIG = {
 const IC = 'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300'
 
 function AnotacoesTab({ childId, familyId }) {
+  const { permissions } = useFamily()
   const [subTab, setSubTab] = useState('geral')
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -440,17 +443,19 @@ function AnotacoesTab({ childId, familyId }) {
       </div>
 
       {/* Add button */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Adicionar {currentCat?.label}
-        </button>
-      </div>
+      {permissions.canAdd && (
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Adicionar {currentCat?.label}
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -460,9 +465,11 @@ function AnotacoesTab({ childId, familyId }) {
         <div className="text-center py-14 bg-white rounded-2xl border border-gray-100">
           <p className="text-3xl mb-3">{currentCat?.emoji}</p>
           <p className="text-gray-500 font-medium">Nenhum registro em {currentCat?.label}</p>
-          <button onClick={() => setShowForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
-            + Adicionar primeiro
-          </button>
+          {permissions.canAdd && (
+            <button onClick={() => setShowForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
+              + Adicionar primeiro
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -486,6 +493,7 @@ function AnotacoesTab({ childId, familyId }) {
 }
 
 function NoteCard({ note, onDeleted }) {
+  const { permissions } = useFamily()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -507,7 +515,7 @@ function NoteCard({ note, onDeleted }) {
         <span className="text-[10px] text-gray-300">
           {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
         </span>
-        {confirmDelete ? (
+        {permissions.canDelete && (confirmDelete ? (
           <div className="flex items-center gap-3">
             <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
             <button onClick={handleDelete} disabled={deleting} className="text-xs text-red-500 font-semibold hover:text-red-700">
@@ -516,7 +524,7 @@ function NoteCard({ note, onDeleted }) {
           </div>
         ) : (
           <button onClick={handleDelete} className="text-xs text-gray-300 hover:text-red-400 transition-colors">Remover</button>
-        )}
+        ))}
       </div>
     </div>
   )

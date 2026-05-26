@@ -10,7 +10,7 @@ import { getGuardForDate, getGuardPeriodsForMonth, GUARDIAN_LABELS } from '../li
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 export default function Agenda() {
-  const { family, child, guardPattern, guardianColors } = useFamily()
+  const { family, child, guardPattern, guardianColors, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [events, setEvents] = useState([])
   const [selectedDay, setSelectedDay] = useState(new Date())
@@ -73,15 +73,17 @@ export default function Agenda() {
           <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
           <p className="text-sm text-gray-500 mt-0.5">Eventos de {child?.name}</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Novo evento
-        </button>
+        {permissions.canAdd && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Novo evento
+          </button>
+        )}
       </div>
 
       {/* Guard legend */}
@@ -181,8 +183,10 @@ export default function Agenda() {
               </span>
             )}
           </h3>
-          <button onClick={() => { setSelectedDay(selectedDay); setShowForm(true) }}
-            className="text-xs text-brand-600 hover:underline">+ Evento</button>
+          {permissions.canAdd && (
+            <button onClick={() => { setSelectedDay(selectedDay); setShowForm(true) }}
+              className="text-xs text-brand-600 hover:underline">+ Evento</button>
+          )}
         </div>
         {selectedEvents.length === 0 ? (
           <p className="text-sm text-gray-400">Nenhum evento neste dia</p>
