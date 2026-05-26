@@ -13,6 +13,7 @@ const ROLE_LABELS = {
   father: 'Pai',
   babysitter: 'Babá',
   grandparent: 'Avó/Avô',
+  stepparent: 'Padrasto/Madrasta',
   relative: 'Parente',
   other: 'Outro',
 }
@@ -572,7 +573,7 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
   const extraRoles = [
     { value: 'babysitter', label: 'Babá' },
     { value: 'grandparent', label: 'Avó/Avô' },
-    { value: 'relative', label: 'Parente' },
+    { value: 'stepparent', label: 'Padrasto/Madrasta' },
     { value: 'other', label: 'Outro' },
   ]
 

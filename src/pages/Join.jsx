@@ -8,7 +8,7 @@ const ROLE_OPTIONS = [
   { value: 'father', label: 'Pai', emoji: '👨' },
   { value: 'grandparent', label: 'Avó/Avô', emoji: '👴' },
   { value: 'babysitter', label: 'Babá', emoji: '🧑' },
-  { value: 'relative', label: 'Parente', emoji: '👨‍👩‍👧' },
+  { value: 'stepparent', label: 'Padrasto/Madrasta', emoji: '👨‍👩‍👧' },
 ]
 
 const COLORS = ['#6d28d9', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899']
