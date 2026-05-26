@@ -117,7 +117,7 @@ export default function Dashboard() {
               {events.map(ev => {
                 const evDate = parseISO(ev.start_at)
                 const evGuard = guardPattern ? getGuardForDate(evDate, guardPattern) : null
-                const evColor = evGuard ? GUARDIAN_COLORS[evGuard] : null
+                const evColor = evGuard ? guardianColors[evGuard] : null
                 return (
                   <div key={ev.id} className="flex items-start gap-3">
                     <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0"

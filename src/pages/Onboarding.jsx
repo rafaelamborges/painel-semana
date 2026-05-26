@@ -70,6 +70,12 @@ export default function Onboarding() {
       })
       if (error) throw error
 
+      // Ensure creator is sysadmin (default column is 'editor')
+      await supabase
+        .from('family_members')
+        .update({ access_role: 'sysadmin' })
+        .eq('id', myMemberId)
+
       await reload()
       navigate('/')
     } catch (err) {

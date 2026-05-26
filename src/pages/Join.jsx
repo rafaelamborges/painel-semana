@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useFamily } from '../context/FamilyContext'
 
 const ROLE_OPTIONS = [
   { value: 'mother', label: 'Mãe', emoji: '👩' },
@@ -16,6 +17,7 @@ const COLORS = ['#6d28d9', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'
 export default function Join() {
   const { code } = useParams()
   const { user } = useAuth()
+  const { reload } = useFamily()
   const navigate = useNavigate()
 
   const [child, setChild] = useState(null)
@@ -96,6 +98,7 @@ export default function Join() {
       return
     }
 
+    await reload()
     navigate('/')
   }
 
