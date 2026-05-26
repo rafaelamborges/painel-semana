@@ -9,11 +9,8 @@ const navItems = [
   { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
   { to: '/guarda', label: 'Guarda', icon: ShieldIcon },
   { to: '/saude', label: 'Saúde', icon: HeartIcon },
-  { to: '/terapia', label: 'Terapia', icon: BrainIcon },
-  { to: '/conquistas', label: 'Conquistas', icon: TrophyIcon },
   { to: '/documentos', label: 'Documentos', icon: FolderIcon },
   { to: '/decisoes', label: 'Decisões', icon: HandshakeIcon },
-  { to: '/emails', label: 'Emails', icon: EmailIcon },
   { to: '/lembretes', label: 'Lembretes', icon: BellIcon },
 ]
 
