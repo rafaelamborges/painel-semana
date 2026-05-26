@@ -104,6 +104,7 @@ export default function Saude() {
                 {upcomingVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="upcoming"
                     onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
+                  />
                 ))}
               </div>
             </div>
