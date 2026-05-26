@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOf
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, GUARDIAN_LABELS } from '../lib/guard'
+import { getGuardForDate } from '../lib/guard'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -19,7 +19,7 @@ const ROLE_LABELS = {
 }
 
 export default function Guarda() {
-  const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, permissions } = useFamily()
+  const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, guardianLabels, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
@@ -101,7 +101,7 @@ export default function Guarda() {
           <h1 className="text-2xl font-bold text-gray-900">Guarda</h1>
           {currentGuardColor && (
             <p className="text-sm mt-0.5 font-medium" style={{ color: currentGuardColor.hex }}>
-              Esta semana: {GUARDIAN_LABELS[currentGuard]}
+              Esta semana: {guardianLabels[currentGuard]}
             </p>
           )}
         </div>
@@ -136,7 +136,7 @@ export default function Guarda() {
             {['mother', 'father'].map(g => (
               <div key={g} className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded border" style={{ backgroundColor: guardianColors[g].lightHex, borderColor: guardianColors[g].hex }} />
-                <span className="text-gray-600">{GUARDIAN_LABELS[g]}</span>
+                <span className="text-gray-600">{guardianLabels[g]}</span>
               </div>
             ))}
             <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function Guarda() {
                   <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl" style={c ? { backgroundColor: c.lightHex } : {}}>
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={c ? { backgroundColor: c.hex } : {}} />
                     <span className="text-sm text-gray-600 flex-1">{format(week.start, 'dd/MM')} – {format(week.end, 'dd/MM')}</span>
-                    <span className="text-sm font-medium" style={c ? { color: c.hex } : {}}>{week.guardian ? GUARDIAN_LABELS[week.guardian] : '–'}</span>
+                    <span className="text-sm font-medium" style={c ? { color: c.hex } : {}}>{week.guardian ? guardianLabels[week.guardian] : '–'}</span>
                   </div>
                 )
               })}
@@ -254,7 +254,7 @@ export default function Guarda() {
 }
 
 function OverrideCard({ swap, familyId, guardPattern, members, setGuardPattern, onUpdate }) {
-  const { guardianColors } = useFamily()
+  const { guardianColors, guardianLabels } = useFamily()
   const guardian = swap.reason?.match(/\[override:(mother|father)\]/)?.[1]
   const color = guardian ? guardianColors[guardian] : null
   const note = swap.reason?.replace(/\[override:(mother|father)\]\s*/, '') || ''
@@ -301,7 +301,7 @@ function OverrideCard({ swap, familyId, guardPattern, members, setGuardPattern, 
           <div className="w-3 h-3 rounded-full mt-1 flex-shrink-0" style={color ? { backgroundColor: color.hex } : {}} />
           <div>
             <p className="text-sm font-medium text-gray-800">
-              {guardian ? GUARDIAN_LABELS[guardian] : '–'} · {dateLabel}
+              {guardian ? guardianLabels[guardian] : '–'} · {dateLabel}
             </p>
             {note && <p className="text-xs text-gray-500 mt-0.5">{note}</p>}
           </div>
@@ -319,7 +319,7 @@ function OverrideCard({ swap, familyId, guardPattern, members, setGuardPattern, 
         <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
           <p className="text-xs text-amber-800 font-medium mb-1">Reorganizar troca a partir deste dia</p>
           <p className="text-xs text-amber-700 mb-3">
-            O calendário de guarda será redefinido: <strong>{guardian ? GUARDIAN_LABELS[guardian] : '–'}</strong> passa a ter a semana de referência a partir de <strong>{swap.requested_date ? format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM/yyyy') : ''}</strong>. As semanas seguintes alternarão automaticamente a partir daí.
+            O calendário de guarda será redefinido: <strong>{guardian ? guardianLabels[guardian] : '–'}</strong> passa a ter a semana de referência a partir de <strong>{swap.requested_date ? format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM/yyyy') : ''}</strong>. As semanas seguintes alternarão automaticamente a partir daí.
           </p>
           <div className="flex gap-2">
             <button onClick={() => setConfirming(false)}
@@ -351,6 +351,8 @@ function MembersTab({ familyId, members, onMembersChanged }) {
   const [showForm, setShowForm] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [changingRole, setChangingRole] = useState(null)
+  const [renamingId, setRenamingId] = useState(null)
+  const [renameValue, setRenameValue] = useState('')
   const atLimit = members.length >= MAX_MEMBERS
 
   async function removeMember(id) {
@@ -362,6 +364,21 @@ function MembersTab({ familyId, members, onMembersChanged }) {
     await supabase.rpc('update_member_access_role', { p_member_id: memberId, p_access_role: newRole })
     setChangingRole(null)
     onMembersChanged()
+  }
+
+  function startRename(m) {
+    setRenamingId(m.id)
+    setRenameValue(m.name || '')
+    setChangingRole(null)
+  }
+
+  async function saveRename(id) {
+    const trimmed = renameValue.trim()
+    if (trimmed) {
+      await supabase.from('family_members').update({ name: trimmed }).eq('id', id)
+      onMembersChanged()
+    }
+    setRenamingId(null)
   }
 
   return (
@@ -405,13 +422,34 @@ function MembersTab({ familyId, members, onMembersChanged }) {
                   {(m.name || '?')[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${roleCfg.badge}`}>{roleCfg.label}</span>
-                  </div>
+                  {renamingId === m.id ? (
+                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveRename(m.id); if (e.key === 'Escape') setRenamingId(null) }}
+                        className="flex-1 text-sm px-2 py-1 border border-brand-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-200"
+                      />
+                      <button onClick={() => saveRename(m.id)} className="text-xs text-brand-600 font-medium hover:text-brand-800">Salvar</button>
+                      <button onClick={() => setRenamingId(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${roleCfg.badge}`}>{roleCfg.label}</span>
+                      {permissions.canManageUsers && (
+                        <button onClick={() => startRename(m)} className="text-gray-300 hover:text-gray-500 flex-shrink-0">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500">{ROLE_LABELS[m.role] || m.role}{m.email ? ` · ${m.email}` : ''}</p>
                 </div>
-                {permissions.canManageUsers && !isSysadmin && (
+                {permissions.canManageUsers && !isSysadmin && renamingId !== m.id && (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {changingRole === m.id ? (
                       <>
@@ -660,7 +698,7 @@ function HistoryTab({ swaps, members }) {
 }
 
 function HistoryEntry({ swap, members }) {
-  const { guardianColors } = useFamily()
+  const { guardianColors, guardianLabels } = useFamily()
   const requester = members.find(m => m.id === swap.requested_by)
   const isOverride = swap.reason?.startsWith('[override:')
   const isReorganized = swap.reason?.startsWith('[reorganized:')
@@ -676,7 +714,7 @@ function HistoryEntry({ swap, members }) {
       : `${format(new Date(swap.requested_date + 'T12:00:00'), 'dd/MM')} – ${format(new Date(swap.proposed_exchange_date + 'T12:00:00'), 'dd/MM/yyyy')}`
     iconBg = color?.hex || '#6b7280'
     icon = <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-    title = `Ajuste manual — ${guardian ? GUARDIAN_LABELS[guardian] : '–'} · ${dateLabel}`
+    title = `Ajuste manual — ${guardian ? guardianLabels[guardian] : '–'} · ${dateLabel}`
     detail = note || null
   } else if (isReorganized) {
     const guardian = swap.reason?.match(/\[reorganized:(mother|father)\]/)?.[1]

@@ -28,6 +28,15 @@ export function FamilyProvider({ children }) {
 
   const permissions = useMemo(() => getPermissions(myAccessRole), [myAccessRole])
 
+  const guardianLabels = useMemo(() => {
+    const motherMember = members.find(m => m.role === 'mother')
+    const fatherMember = members.find(m => m.role === 'father')
+    return {
+      mother: motherMember?.name || 'Mamãe',
+      father: fatherMember?.name || 'Papai',
+    }
+  }, [members])
+
   const guardianColors = useMemo(() => {
     const motherMember = members.find(m => m.role === 'mother')
     const fatherMember = members.find(m => m.role === 'father')
@@ -123,6 +132,7 @@ export function FamilyProvider({ children }) {
       getCurrentUserMember,
       setGuardPattern,
       guardianColors,
+      guardianLabels,
       myAccessRole,
       permissions,
     }}>
