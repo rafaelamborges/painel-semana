@@ -75,10 +75,10 @@ export default function Dashboard() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="page-title">
           {greeting()}! {child ? `Olhando pelo ${child.name}` : 'Bem-vindo ao Compasso'}
         </h1>
-        <p className="text-gray-500 mt-0.5 text-sm capitalize">
+        <p className="body-sm mt-0.5 capitalize">
           {format(today, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
         </p>
       </div>
@@ -86,13 +86,13 @@ export default function Dashboard() {
       {/* Guard card */}
       {guardColor && (
         <div className="rounded-2xl p-5 flex items-center gap-4" style={{ backgroundColor: guardColor.lightHex }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: guardColor.hex + '30' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: guardColor.hex + '30' }}>
             {currentGuard === 'mother' ? '💙' : '💚'}
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500">Guarda esta semana</p>
+            <p className="label-muted">Guarda esta semana</p>
             <p className="text-lg font-bold" style={{ color: guardColor.hex }}>{guardLabel}</p>
-            {child && <p className="text-sm text-gray-600">{child.name} está com {guardLabel} até segunda-feira</p>}
+            {child && <p className="body-sm">{child.name} está com {guardLabel} até segunda-feira</p>}
           </div>
           <Link to="/guarda" className="ml-auto text-xs font-medium hover:underline" style={{ color: guardColor.hex }}>
             Ver calendário →
@@ -102,14 +102,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Upcoming events */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">Próximos eventos</h2>
+            <h2 className="section-title">Próximos eventos</h2>
             <Link to="/agenda" className="text-xs text-brand-600 hover:underline">Ver tudo</Link>
           </div>
           {events.length === 0 ? (
             <div className="text-center py-6">
-              <p className="text-gray-400 text-sm">Nenhum evento nos próximos 14 dias</p>
+              <p className="body-sm text-slate-400">Nenhum evento nos próximos 14 dias</p>
               <Link to="/agenda" className="mt-2 inline-block text-xs text-brand-600 hover:underline">Adicionar evento</Link>
             </div>
           ) : (
@@ -123,9 +123,9 @@ export default function Dashboard() {
                     <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0"
                       style={{ backgroundColor: evColor?.hex || '#9ca3af' }} />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{ev.title}</p>
-                      <p className="text-xs text-gray-400">{formatEventDate(ev.start_at)}</p>
-                      {ev.location && <p className="text-xs text-gray-400">{ev.location}</p>}
+                      <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>
+                      <p className="label-muted">{formatEventDate(ev.start_at)}</p>
+                      {ev.location && <p className="label-muted">{ev.location}</p>}
                     </div>
                   </div>
                 )
@@ -135,9 +135,9 @@ export default function Dashboard() {
         </div>
 
         {/* Alerts */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">Alertas</h2>
+            <h2 className="section-title">Alertas</h2>
             <Link to="/lembretes" className="text-xs text-brand-600 hover:underline">Ver todos</Link>
           </div>
           <div className="space-y-3">
@@ -153,7 +153,7 @@ export default function Dashboard() {
                 message={`${v.vaccine_name} – ${v.dose_label}`} to="/saude" />
             ))}
             {!therapyAlert && urgentVaccines.length === 0 && upcomingVaccines.length === 0 && (
-              <p className="text-gray-400 text-sm text-center py-4">Nenhum alerta no momento</p>
+              <p className="body-sm text-slate-400 text-center py-4">Nenhum alerta no momento</p>
             )}
           </div>
         </div>
@@ -168,23 +168,24 @@ export default function Dashboard() {
           { to: '/emails', icon: '📧', label: 'Importar emails' },
         ].map(item => (
           <Link key={item.to} to={item.to}
-            className="bg-white border border-gray-100 rounded-2xl p-4 text-center hover:border-brand-200 hover:bg-brand-50 transition-colors">
+            className="bg-white rounded-2xl border shadow-card p-4 text-center hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200"
+            style={{ borderColor: 'var(--border)' }}>
             <div className="text-2xl mb-2">{item.icon}</div>
-            <p className="text-xs font-medium text-gray-600">{item.label}</p>
+            <p className="text-xs font-medium text-slate-600">{item.label}</p>
           </Link>
         ))}
       </div>
 
       {/* Child profile card */}
       {child && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-4">
+        <div className="card flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center text-2xl flex-shrink-0">
             {child.photo_url ? <img src={child.photo_url} alt={child.name} className="w-full h-full rounded-full object-cover" /> : '🧒'}
           </div>
           <div>
-            <p className="font-semibold text-gray-800">{child.name}</p>
+            <p className="font-semibold text-slate-800">{child.name}</p>
             {child.birth_date && (
-              <p className="text-sm text-gray-500">
+              <p className="body-sm">
                 {differenceInDays(today, parseISO(child.birth_date)) > 0
                   ? `${Math.floor(differenceInDays(today, parseISO(child.birth_date)) / 365)} anos`
                   : ''}
@@ -206,7 +207,7 @@ function AlertItem({ icon, color, label, message, to }) {
     blue: 'bg-blue-50 text-blue-700 border-blue-100',
   }
   return (
-    <Link to={to} className={`flex items-start gap-2.5 p-3 rounded-xl border text-xs ${colorMap[color]} hover:opacity-80 transition-opacity`}>
+    <Link to={to} className={`flex items-start gap-2.5 rounded-xl border p-3 text-xs ${colorMap[color]} hover:opacity-80 transition-opacity`}>
       <span className="text-base leading-none mt-0.5">{icon}</span>
       <div>
         <p className="font-semibold">{label}</p>
