@@ -96,7 +96,7 @@ export default function Guarda() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Guarda</h1>
           {currentGuardColor && (
@@ -105,20 +105,22 @@ export default function Guarda() {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
-          {permissions.canEdit && (
-            <button onClick={() => setShowManualForm(true)}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
-              Ajuste manual
-            </button>
-          )}
-          {permissions.canAdd && (
-            <button onClick={() => setShowSwapForm(true)}
-              className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-              Solicitar troca
-            </button>
-          )}
-        </div>
+        {(permissions.canEdit || permissions.canAdd) && (
+          <div className="flex gap-2">
+            {permissions.canEdit && (
+              <button onClick={() => setShowManualForm(true)}
+                className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+                Ajuste manual
+              </button>
+            )}
+            {permissions.canAdd && (
+              <button onClick={() => setShowSwapForm(true)}
+                className="flex-1 sm:flex-none px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                Solicitar troca
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
