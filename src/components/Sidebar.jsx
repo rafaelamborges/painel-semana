@@ -29,22 +29,31 @@ export default function Sidebar({ open, onClose }) {
   }
 
   return (
-    <aside className={`
-      fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300
-      lg:static lg:translate-x-0
-      ${open ? 'translate-x-0' : '-translate-x-full'}
-    `}>
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-30 w-64 bg-white border-r flex flex-col transition-transform duration-300
+        lg:static lg:translate-x-0
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+      `}
+      style={{ borderRightColor: 'var(--border)' }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
+      <div
+        className="flex items-center gap-3 px-5 py-5 border-b"
+        style={{ borderColor: 'var(--border)' }}
+      >
         <CompassLogo />
         <div>
-          <span className="text-lg font-bold text-brand-700">Compasso</span>
+          <span className="text-[17px] font-bold text-slate-900">Compasso</span>
           {child && (
-            <p className="text-xs text-gray-400">{child.name}</p>
+            <p className="text-xs text-slate-400">{child.name}</p>
           )}
         </div>
-        <button onClick={onClose} className="ml-auto lg:hidden p-1 rounded hover:bg-gray-100">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={onClose}
+          className="ml-auto lg:hidden p-1 rounded-lg hover:bg-slate-100 transition-colors"
+        >
+          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -52,8 +61,10 @@ export default function Sidebar({ open, onClose }) {
 
       {/* Guard badge */}
       {guardColor && (
-        <div className="mx-4 my-3 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
-          style={{ backgroundColor: guardColor.lightHex, color: guardColor.hex }}>
+        <div
+          className="mx-4 my-3 rounded-xl px-3 py-2.5 text-sm font-semibold flex items-center gap-2"
+          style={{ backgroundColor: guardColor.lightHex, color: guardColor.hex }}
+        >
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: guardColor.hex }} />
           Hoje: {guardLabel}
         </div>
@@ -61,6 +72,9 @@ export default function Sidebar({ open, onClose }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        <p className="px-4 pb-1 pt-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+          Menu
+        </p>
         {navItems.map(({ to, label, icon: Icon, exact }) => (
           <NavLink
             key={to}
@@ -68,26 +82,22 @@ export default function Sidebar({ open, onClose }) {
             end={exact}
             onClick={onClose}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`
+              `nav-item${isActive ? ' nav-item-active' : ''}`
             }
           >
-            <Icon className="w-4 h-4 flex-shrink-0" />
+            <Icon className="w-[18px] h-[18px] flex-shrink-0" />
             {label}
           </NavLink>
         ))}
       </nav>
 
       {/* Sign out */}
-      <div className="px-3 py-3 border-t border-gray-100">
+      <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+          className="nav-item w-full hover:bg-red-50 hover:text-red-600"
         >
-          <LogoutIcon className="w-4 h-4" />
+          <LogoutIcon className="w-[18px] h-[18px] flex-shrink-0" />
           Sair
         </button>
       </div>
@@ -97,14 +107,15 @@ export default function Sidebar({ open, onClose }) {
 
 function CompassLogo() {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="16" cy="16" r="14" fill="#f5f3ff" stroke="#6d28d9" strokeWidth="2"/>
-      <circle cx="16" cy="16" r="2" fill="#6d28d9"/>
-      <polygon points="16,4 18,16 16,14 14,16" fill="#6d28d9"/>
-      <polygon points="16,28 14,16 16,18 18,16" fill="#9ca3af"/>
-      <polygon points="4,16 16,14 14,16 16,18" fill="#9ca3af"/>
-      <polygon points="28,16 16,18 18,16 16,14" fill="#6d28d9"/>
-    </svg>
+    <div className="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="1.5" fill="white" />
+        <polygon points="10,2 11.2,10 10,8.8 8.8,10" fill="white" />
+        <polygon points="10,18 8.8,10 10,11.2 11.2,10" fill="rgba(255,255,255,0.5)" />
+        <polygon points="2,10 10,8.8 8.8,10 10,11.2" fill="rgba(255,255,255,0.5)" />
+        <polygon points="18,10 10,11.2 11.2,10 10,8.8" fill="white" />
+      </svg>
+    </div>
   )
 }
 
@@ -120,20 +131,11 @@ function ShieldIcon({ className }) {
 function HeartIcon({ className }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
 }
-function BrainIcon({ className }) {
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-}
-function TrophyIcon({ className }) {
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3h14M5 3a2 2 0 00-2 2v3a7 7 0 007 7 7 7 0 007-7V5a2 2 0 00-2-2M5 3H3m16 0h2M12 17v4m-4 0h8" /></svg>
-}
 function FolderIcon({ className }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>
 }
 function HandshakeIcon({ className }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-}
-function EmailIcon({ className }) {
-  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
 }
 function BellIcon({ className }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>

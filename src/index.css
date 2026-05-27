@@ -3,19 +3,138 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --page-bg: #F4F6FD;
+    --surface: #FFFFFF;
+    --border: #E8EDF7;
+    --radius-card: 16px;
+    --radius-btn: 12px;
+  }
+
+  html { scroll-behavior: smooth; }
+
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply font-sans antialiased;
+    background-color: var(--page-bg);
+    color: theme('colors.slate.900');
+    font-feature-settings: 'liga' 1, 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 { @apply font-semibold tracking-tight; }
+
+  input, textarea, select { @apply font-sans; }
+}
+
+@layer components {
+  /* ── Cards ─────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl border shadow-card p-5;
+    border-color: var(--border);
+  }
+  .card-sm {
+    @apply bg-white rounded-xl border shadow-card p-4;
+    border-color: var(--border);
+  }
+  .card-interactive {
+    @apply card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  /* ── Buttons ─────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-xl text-sm font-medium
+           transition-all duration-150 select-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn px-5 py-2.5
+           bg-brand-600 text-white shadow-sm
+           hover:bg-brand-700 active:bg-brand-800 active:scale-[0.98]
+           focus-visible:ring-brand-400;
+  }
+  .btn-secondary {
+    @apply btn px-5 py-2.5
+           bg-white text-slate-700 border shadow-sm
+           hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 active:scale-[0.98]
+           focus-visible:ring-slate-300;
+    border-color: var(--border);
+  }
+  .btn-ghost {
+    @apply btn px-3 py-2 text-slate-500
+           hover:bg-slate-100 hover:text-slate-700 active:bg-slate-200
+           focus-visible:ring-slate-300;
+  }
+  .btn-danger {
+    @apply btn px-5 py-2.5
+           bg-red-50 text-red-600 border border-red-100 shadow-sm
+           hover:bg-red-100 active:scale-[0.98]
+           focus-visible:ring-red-300;
+  }
+  .btn-icon {
+    @apply btn p-2 rounded-xl text-slate-500
+           hover:bg-slate-100 hover:text-slate-700
+           focus-visible:ring-slate-300;
+  }
+
+  /* ── Inputs ─────────────────────────────────────── */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl text-sm text-slate-900
+           bg-white border placeholder:text-slate-400
+           transition-all duration-150
+           focus:outline-none focus:ring-2 focus:ring-brand-400/40 focus:border-brand-400;
+    border-color: var(--border);
+  }
+  .input-label {
+    @apply block text-xs font-medium text-slate-500 mb-1.5;
+  }
+  .select {
+    @apply input appearance-none bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 14px center;
+    padding-right: 38px;
+  }
+
+  /* ── Badges ─────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-brand  { @apply badge bg-brand-50 text-brand-700; }
+  .badge-green  { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-amber  { @apply badge bg-amber-50 text-amber-700; }
+  .badge-red    { @apply badge bg-red-50 text-red-600; }
+  .badge-slate  { @apply badge bg-slate-100 text-slate-600; }
+
+  /* ── Typography helpers ────────────────────────── */
+  .page-title    { @apply text-2xl font-bold text-slate-900 tracking-tight; }
+  .section-title { @apply text-sm font-semibold text-slate-800; }
+  .label-muted   { @apply text-xs font-medium text-slate-500; }
+  .body-sm       { @apply text-sm text-slate-600; }
+
+  /* ── Divider ─────────────────────────────────── */
+  .divider { @apply border-t; border-color: var(--border); }
+
+  /* ── Nav item (sidebar) ───────────────────────── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           text-slate-600 transition-all duration-150
+           hover:bg-slate-100 hover:text-slate-900;
+  }
+  .nav-item-active {
+    @apply bg-brand-50 text-brand-700 font-semibold;
   }
 }
 
 @layer utilities {
-  .guard-mom {
-    background-color: rgba(59, 130, 246, 0.08);
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  .guard-dad {
-    background-color: rgba(16, 185, 129, 0.08);
-  }
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  .safe-b  { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-t  { padding-top: env(safe-area-inset-top, 0px); }
+
+  .text-balance { text-wrap: balance; }
 }
