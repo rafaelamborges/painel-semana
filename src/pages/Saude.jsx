@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { format, parseISO, isPast, isFuture, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useSearchParams } from 'react-router-dom'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateVaccinationSchedule } from '../lib/pni'
 
 export default function Saude() {
   const { child, family, permissions } = useFamily()
-  const [tab, setTab] = useState('vacinas')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState(searchParams.get('tab') || 'vacinas')
   const [consultations, setConsultations] = useState([])
   const [administered, setAdministered] = useState([])
   const [showConsultationForm, setShowConsultationForm] = useState(false)
@@ -41,6 +43,7 @@ export default function Saude() {
   }
 
   const administeredIds = new Set(administered.map(a => `${a.vaccine_id}_${a.dose_label}`))
+  const administeredMap = new Map(administered.map(a => [`${a.vaccine_id}_${a.dose_label}`, a]))
 
   const overdueVaccines = vaccinationSchedule.filter(v => !administeredIds.has(v.id) && isPast(v.scheduledDate))
   const upcomingVaccines = vaccinationSchedule.filter(v => !administeredIds.has(v.id) && isFuture(v.scheduledDate))
@@ -69,6 +72,7 @@ export default function Saude() {
           { id: 'vacinas', label: 'Vacinas' },
           { id: 'consultas', label: 'Consultas' },
           { id: 'anotacoes', label: 'Anotações' },
+          { id: 'cartao', label: 'Cartão' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -118,7 +122,7 @@ export default function Saude() {
               </h3>
               <div className="space-y-2">
                 {doneVaccines.map(v => (
-                  <VaccineRow key={v.id} vaccine={v} status="done" />
+                  <VaccineRow key={v.id} vaccine={v} status="done" administeredRecord={administeredMap.get(v.id)} />
                 ))}
               </div>
             </div>
@@ -158,6 +162,10 @@ export default function Saude() {
         <AnotacoesTab childId={child?.id} familyId={family?.id} />
       )}
 
+      {tab === 'cartao' && (
+        <VaccinationCardTab child={child} family={family} />
+      )}
+
       {showVaccineForm && selectedVaccine && (
         <VaccineForm
           vaccine={selectedVaccine}
@@ -192,7 +200,7 @@ function StatCard({ label, value, color }) {
   )
 }
 
-function VaccineRow({ vaccine, status, onAdminister }) {
+function VaccineRow({ vaccine, status, onAdminister, administeredRecord }) {
   const daysUntil = differenceInDays(vaccine.scheduledDate, new Date())
   return (
     <div className={`flex items-center gap-3 p-3 rounded-xl border ${
@@ -207,11 +215,17 @@ function VaccineRow({ vaccine, status, onAdminister }) {
         <p className={`text-sm font-medium ${status === 'done' ? 'text-green-700' : 'text-gray-800'}`}>
           {vaccine.vaccine_name}
         </p>
-        <p className="text-xs text-gray-500">
-          {vaccine.dose_label} · Prevista: {format(vaccine.scheduledDate, 'dd/MM/yyyy')}
-          {status === 'overdue' && <span className="text-red-500"> · {Math.abs(daysUntil)} dias atrás</span>}
-          {status === 'upcoming' && daysUntil <= 90 && <span className="text-amber-600"> · em {daysUntil} dias</span>}
-        </p>
+        {status === 'done' && administeredRecord?.administered_date ? (
+          <p className="text-xs text-green-600">
+            {vaccine.dose_label} · Aplicada em: {format(parseISO(administeredRecord.administered_date), 'dd/MM/yyyy')}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500">
+            {vaccine.dose_label} · Prevista: {format(vaccine.scheduledDate, 'dd/MM/yyyy')}
+            {status === 'overdue' && <span className="text-red-500"> · {Math.abs(daysUntil)} dias atrás</span>}
+            {status === 'upcoming' && daysUntil <= 90 && <span className="text-amber-600"> · em {daysUntil} dias</span>}
+          </p>
+        )}
       </div>
       {(status === 'overdue' || status === 'upcoming') && onAdminister && (
         <button onClick={onAdminister}
@@ -793,6 +807,110 @@ function NoteForm({ category, childId, familyId, onClose, onSaved }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Vaccination Card ────────────────────────────────────────────────────
+
+function VaccinationCardTab({ child, family }) {
+  const [uploading, setUploading] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const { permissions } = useFamily()
+
+  const bucketPath = `${family?.id}/${child?.id}/vaccination-card`
+
+  useEffect(() => {
+    if (!child || !family) return
+    loadPhoto()
+  }, [child, family])
+
+  async function loadPhoto() {
+    setLoading(true)
+    const { data } = await supabase.storage
+      .from('vaccination-cards')
+      .createSignedUrl(bucketPath, 3600)
+    if (data?.signedUrl) setPhotoUrl(data.signedUrl)
+    setLoading(false)
+  }
+
+  async function handleUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { setError('Arquivo muito grande. Máx 10 MB.'); return }
+    setUploading(true)
+    setError('')
+    const ext = file.name.split('.').pop()
+    const path = `${family.id}/${child.id}/vaccination-card.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('vaccination-cards')
+      .upload(path, file, { upsert: true })
+    if (uploadError) {
+      setError('Erro ao enviar foto. Verifique se o bucket "vaccination-cards" existe no Supabase Storage.')
+    } else {
+      const { data } = await supabase.storage.from('vaccination-cards').createSignedUrl(path, 3600)
+      if (data?.signedUrl) setPhotoUrl(data.signedUrl)
+    }
+    setUploading(false)
+  }
+
+  async function handleRemove() {
+    setUploading(true)
+    await supabase.storage.from('vaccination-cards').remove([bucketPath])
+    setPhotoUrl(null)
+    setUploading(false)
+  }
+
+  return (
+    <div className="max-w-lg">
+      <div className="card mb-4">
+        <h3 className="section-title mb-1">Foto do cartão de vacinação</h3>
+        <p className="body-sm text-slate-400 mb-4">Envie uma foto do cartão físico de vacinação de {child?.name}.</p>
+
+        {loading ? (
+          <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+        ) : photoUrl ? (
+          <div className="space-y-3">
+            <img src={photoUrl} alt="Cartão de vacinação" className="w-full rounded-xl border border-gray-100 object-contain max-h-96" />
+            {permissions.canAdd && (
+              <div className="flex gap-2">
+                <label className="flex-1 cursor-pointer">
+                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUpload} disabled={uploading} />
+                  <span className="btn-secondary w-full flex items-center justify-center gap-2 py-2.5 text-sm">
+                    {uploading ? 'Enviando…' : 'Substituir foto'}
+                  </span>
+                </label>
+                <button onClick={handleRemove} disabled={uploading}
+                  className="btn-danger px-4 py-2.5 text-sm">
+                  Remover
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          permissions.canAdd ? (
+            <label className="cursor-pointer block">
+              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUpload} disabled={uploading} />
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center hover:border-brand-300 hover:bg-brand-50/30 transition-colors">
+                <div className="text-3xl mb-3">📷</div>
+                <p className="text-sm font-medium text-gray-600">{uploading ? 'Enviando…' : 'Clique para enviar foto'}</p>
+                <p className="text-xs text-gray-400 mt-1">JPG, PNG ou PDF · Máx 10 MB</p>
+              </div>
+            </label>
+          ) : (
+            <div className="text-center py-10 text-gray-400 text-sm">Nenhum cartão enviado ainda.</div>
+          )
+        )}
+
+        {error && <p className="mt-3 text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-700">
+        <p className="font-semibold mb-1">Para ativar o envio de fotos:</p>
+        <p>Crie o bucket <code className="bg-amber-100 px-1 rounded">vaccination-cards</code> no Supabase Storage com acesso privado e política RLS para membros da família.</p>
       </div>
     </div>
   )

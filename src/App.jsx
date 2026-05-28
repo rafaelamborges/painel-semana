@@ -14,6 +14,7 @@ import Decisoes from './pages/Decisoes'
 import Lembretes from './pages/Lembretes'
 import Documentos from './pages/Documentos'
 import Join from './pages/Join'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="decisoes" element={<Decisoes />} />
               <Route path="lembretes" element={<Lembretes />} />
               <Route path="documentos" element={<Documentos />} />
+              <Route path="admin" element={<Admin />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
