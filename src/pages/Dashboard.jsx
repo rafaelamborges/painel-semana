@@ -100,40 +100,57 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Upcoming events */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="section-title">Próximos eventos</h2>
-            <Link to="/agenda" className="text-xs text-brand-600 hover:underline">Ver tudo</Link>
-          </div>
-          {events.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="body-sm text-slate-400">Nenhum evento nos próximos 14 dias</p>
-              <Link to="/agenda" className="mt-2 inline-block text-xs text-brand-600 hover:underline">Adicionar evento</Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {events.map(ev => {
-                const evDate = parseISO(ev.start_at)
-                const evGuard = guardPattern ? getGuardForDate(evDate, guardPattern) : null
-                const evColor = evGuard ? guardianColors[evGuard] : null
-                return (
-                  <div key={ev.id} className="flex items-start gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0"
-                      style={{ backgroundColor: evColor?.hex || '#9ca3af' }} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>
-                      <p className="label-muted">{formatEventDate(ev.start_at)}</p>
-                      {ev.location && <p className="label-muted">{ev.location}</p>}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+      {/* Agenda preview — full width */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="section-title">Próximos eventos</h2>
+          <Link to="/agenda" className="text-xs text-brand-600 hover:underline">Ver agenda →</Link>
         </div>
+        {events.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="body-sm text-slate-400">Agenda limpa nos próximos 14 dias</p>
+            <Link to="/agenda" className="mt-2 inline-block text-xs text-brand-600 hover:underline">Adicionar evento</Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {events.map(ev => {
+              const evDate = parseISO(ev.start_at)
+              const evGuard = guardPattern ? getGuardForDate(evDate, guardPattern) : null
+              const evColor = evGuard ? guardianColors[evGuard] : null
+              return (
+                <div key={ev.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: evColor?.hex || '#9ca3af' }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>
+                    {ev.location && <p className="label-muted truncate">{ev.location}</p>}
+                  </div>
+                  <p className="label-muted flex-shrink-0 text-right">{formatEventDate(ev.start_at)}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
+      {/* Quick links */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { to: '/saude?tab=anotacoes', icon: '📝', label: 'Anotações de Saúde' },
+          { to: '/decisoes', icon: '🤝', label: 'Nova decisão' },
+          { to: '/guarda', icon: '🛡️', label: 'Calendário de guarda' },
+          { to: '/documentos', icon: '📁', label: 'Documentos' },
+        ].map(item => (
+          <Link key={item.to} to={item.to}
+            className="bg-white rounded-2xl border shadow-card p-4 text-center hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200"
+            style={{ borderColor: 'var(--border)' }}>
+            <div className="text-2xl mb-2">{item.icon}</div>
+            <p className="text-xs font-medium text-slate-600">{item.label}</p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Alerts */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -142,7 +159,7 @@ export default function Dashboard() {
           </div>
           <div className="space-y-3">
             {therapyAlert && (
-              <AlertItem icon="🧠" color="amber" label="Terapia" message={therapyAlert.message} to="/terapia" />
+              <AlertItem icon="🧠" color="amber" label="Terapia" message={therapyAlert.message} to="/saude" />
             )}
             {urgentVaccines.map(v => (
               <AlertItem key={v.id} icon="💉" color="red" label="Vacina atrasada"
@@ -157,45 +174,28 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { to: '/terapia', icon: '🧠', label: 'Registrar terapia' },
-          { to: '/conquistas', icon: '🏆', label: 'Nova conquista' },
-          { to: '/decisoes', icon: '🤝', label: 'Registrar decisão' },
-          { to: '/emails', icon: '📧', label: 'Importar emails' },
-        ].map(item => (
-          <Link key={item.to} to={item.to}
-            className="bg-white rounded-2xl border shadow-card p-4 text-center hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200"
-            style={{ borderColor: 'var(--border)' }}>
-            <div className="text-2xl mb-2">{item.icon}</div>
-            <p className="text-xs font-medium text-slate-600">{item.label}</p>
-          </Link>
-        ))}
+        {/* Child profile card */}
+        {child && (
+          <div className="card flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center text-2xl flex-shrink-0">
+              {child.photo_url ? <img src={child.photo_url} alt={child.name} className="w-full h-full rounded-full object-cover" /> : '🧒'}
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800">{child.name}</p>
+              {child.birth_date && (
+                <p className="body-sm">
+                  {differenceInDays(today, parseISO(child.birth_date)) > 0
+                    ? `${Math.floor(differenceInDays(today, parseISO(child.birth_date)) / 365)} anos`
+                    : ''}
+                  {child.school ? ` · ${child.school}` : ''}
+                  {child.grade ? ` · ${child.grade}` : ''}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Child profile card */}
-      {child && (
-        <div className="card flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center text-2xl flex-shrink-0">
-            {child.photo_url ? <img src={child.photo_url} alt={child.name} className="w-full h-full rounded-full object-cover" /> : '🧒'}
-          </div>
-          <div>
-            <p className="font-semibold text-slate-800">{child.name}</p>
-            {child.birth_date && (
-              <p className="body-sm">
-                {differenceInDays(today, parseISO(child.birth_date)) > 0
-                  ? `${Math.floor(differenceInDays(today, parseISO(child.birth_date)) / 365)} anos`
-                  : ''}
-                {child.school ? ` · ${child.school}` : ''}
-                {child.grade ? ` · ${child.grade}` : ''}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
