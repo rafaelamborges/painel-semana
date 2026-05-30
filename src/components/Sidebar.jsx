@@ -31,29 +31,25 @@ export default function Sidebar({ open, onClose }) {
   return (
     <aside
       className={`
-        fixed inset-y-0 left-0 z-30 w-64 bg-white border-r flex flex-col transition-transform duration-300
+        fixed inset-y-0 left-0 z-30 w-64 bg-brand-600 border-r border-brand-700/30 flex flex-col transition-transform duration-300
         lg:static lg:translate-x-0
         ${open ? 'translate-x-0' : '-translate-x-full'}
       `}
-      style={{ borderRightColor: 'var(--border)' }}
     >
       {/* Logo */}
-      <div
-        className="flex items-center gap-3 px-5 py-5 border-b"
-        style={{ borderColor: 'var(--border)' }}
-      >
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-brand-700/40">
         <CompassLogo />
         <div>
-          <span className="text-[17px] font-bold text-slate-900">Compasso</span>
+          <span className="text-white text-[17px] font-bold">Compasso</span>
           {child && (
-            <p className="text-xs text-slate-400">{child.name}</p>
+            <p className="text-white/60 text-xs">{child.name}</p>
           )}
         </div>
         <button
           onClick={onClose}
-          className="ml-auto lg:hidden p-1 rounded-lg hover:bg-slate-100 transition-colors"
+          className="ml-auto lg:hidden p-1 rounded-lg text-white/60 hover:bg-white/10 transition-colors"
         >
-          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -72,7 +68,7 @@ export default function Sidebar({ open, onClose }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-        <p className="px-4 pb-1 pt-3 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+        <p className="text-white/40 text-[10px] font-semibold uppercase tracking-widest px-4 pb-1 pt-3">
           Menu
         </p>
         {navItems.map(({ to, label, icon: Icon, exact }) => (
@@ -92,7 +88,7 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       {/* Sign out */}
-      <div className="px-3 py-3 border-t space-y-0.5" style={{ borderColor: 'var(--border)' }}>
+      <div className="px-3 py-3 border-t border-brand-700/40 space-y-0.5">
         {permissions?.canManageUsers && (
           <NavLink
             to="/admin"
@@ -107,7 +103,7 @@ export default function Sidebar({ open, onClose }) {
         )}
         <button
           onClick={handleSignOut}
-          className="nav-item w-full hover:bg-red-50 hover:text-red-600"
+          className="nav-item w-full hover:!bg-red-900/30 hover:!text-red-300"
         >
           <LogoutIcon className="w-[18px] h-[18px] flex-shrink-0" />
           Sair
@@ -119,7 +115,7 @@ export default function Sidebar({ open, onClose }) {
 
 function CompassLogo() {
   return (
-    <div className="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
+    <div className="w-9 h-9 rounded-full bg-warm-500 flex items-center justify-center flex-shrink-0">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="10" cy="10" r="1.5" fill="white" />
         <polygon points="10,2 11.2,10 10,8.8 8.8,10" fill="white" />

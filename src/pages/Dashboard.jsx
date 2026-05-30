@@ -85,17 +85,25 @@ export default function Dashboard() {
 
       {/* Guard card */}
       {guardColor && (
-        <div className="rounded-2xl p-5 flex items-center gap-4" style={{ backgroundColor: guardColor.lightHex }}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: guardColor.hex + '30' }}>
+        <div
+          className="rounded-2xl p-5 flex items-center gap-4 relative overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${guardColor.hex}15 0%, ${guardColor.hex}30 100%)`, border: `1px solid ${guardColor.hex}30` }}
+        >
+          {/* Decorative circle */}
+          <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-10"
+            style={{ backgroundColor: guardColor.hex }} />
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+            style={{ backgroundColor: guardColor.hex + '25' }}>
             {currentGuard === 'mother' ? '💙' : '💚'}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="label-muted">Guarda esta semana</p>
             <p className="text-lg font-bold" style={{ color: guardColor.hex }}>{guardLabel}</p>
-            {child && <p className="body-sm">{child.name} está com {guardLabel} até segunda-feira</p>}
+            {child && <p className="body-sm truncate">{child.name} está com {guardLabel}</p>}
           </div>
-          <Link to="/guarda" className="ml-auto text-xs font-medium hover:underline" style={{ color: guardColor.hex }}>
-            Ver calendário →
+          <Link to="/guarda" className="ml-auto text-xs font-semibold hover:underline flex-shrink-0"
+            style={{ color: guardColor.hex }}>
+            Ver →
           </Link>
         </div>
       )}
