@@ -18,14 +18,17 @@ export default function BottomNav() {
             key={to}
             to={to}
             end={exact}
-            className="bottom-nav-item"
+            className="flex-1 flex flex-col items-center gap-0.5 pt-2 pb-1"
           >
             {({ isActive }) => (
               <>
-                <span className={isActive ? 'bottom-nav-icon-active bottom-nav-item-active' : 'bottom-nav-icon'}>
+                <span className={isActive
+                  ? 'p-1.5 rounded-xl bg-brand-50 text-brand-600'
+                  : 'p-1.5 text-slate-400'
+                }>
                   <Icon />
                 </span>
-                <span className={`text-[10px] font-medium leading-none ${isActive ? 'bottom-nav-item-active' : ''}`}>
+                <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-brand-600' : 'text-slate-400'}`}>
                   {label}
                 </span>
               </>

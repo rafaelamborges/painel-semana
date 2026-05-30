@@ -31,9 +31,10 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile top bar — logo + guard badge only, no hamburger */}
         <header
-          className="lg:hidden flex items-center justify-between px-4 py-3 bg-brand-600 border-b border-brand-700/40 sticky top-0 z-20"
+          className="lg:hidden flex items-center justify-between px-4 py-3 bg-white/90 backdrop-blur-sm border-b sticky top-0 z-20"
+          style={{ borderColor: 'var(--border)' }}
         >
-          <span className="font-bold text-white text-lg">Compasso</span>
+          <span className="font-bold text-brand-700 text-lg">Compasso</span>
           {guardColor && (
             <span
               className="px-2.5 py-1 rounded-full text-xs font-semibold"
