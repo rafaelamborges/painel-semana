@@ -94,7 +94,7 @@ export default function Documentos() {
   if (setupRequired) {
     return (
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Documentos</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Arquivos</h1>
         <p className="text-sm text-gray-500 mb-6">Configure o banco de dados para ativar esta funcionalidade.</p>
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
           <p className="text-sm font-semibold text-amber-800 mb-1">Configuração necessária</p>
@@ -115,7 +115,7 @@ export default function Documentos() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Documentos</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Arquivos</h1>
           {child && (
             <p className="text-sm text-gray-500 mt-0.5">
               {child.name} · {docs.length}/{MAX_DOCS}

@@ -2,8 +2,8 @@ import { NavLink } from 'react-router-dom'
 
 const navItems = [
   { to: '/', label: 'Início', icon: HomeIcon, exact: true },
-  { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
-  { to: '/guarda', label: 'Guarda', icon: ShieldIcon },
+  { to: '/agenda', label: 'Eventos', icon: CalendarIcon },
+  { to: '/guarda', label: 'Rotina', icon: ShieldIcon },
   { to: '/saude', label: 'Saúde', icon: HeartIcon },
   { to: '/lembretes', label: 'Alertas', icon: BellIcon },
 ]

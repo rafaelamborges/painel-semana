@@ -5,12 +5,12 @@ import { getGuardForDate } from '../lib/guard'
 
 const navItems = [
   { to: '/', label: 'Início', icon: HomeIcon, exact: true },
-  { to: '/agenda', label: 'Agenda', icon: CalendarIcon },
-  { to: '/guarda', label: 'Guarda', icon: ShieldIcon },
+  { to: '/agenda', label: 'Eventos', icon: CalendarIcon },
+  { to: '/guarda', label: 'Rotina', icon: ShieldIcon },
   { to: '/saude', label: 'Saúde', icon: HeartIcon },
-  { to: '/documentos', label: 'Documentos', icon: FolderIcon },
-  { to: '/decisoes', label: 'Decisões', icon: HandshakeIcon },
-  { to: '/lembretes', label: 'Lembretes', icon: BellIcon },
+  { to: '/documentos', label: 'Arquivos', icon: FolderIcon },
+  { to: '/decisoes', label: 'Acordos', icon: HandshakeIcon },
+  { to: '/lembretes', label: 'Alertas', icon: BellIcon },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -102,7 +102,7 @@ export default function Sidebar({ open, onClose }) {
             }
           >
             <UsersIcon className="w-[18px] h-[18px] flex-shrink-0" />
-            Membros
+            Responsáveis
           </NavLink>
         )}
         <button

@@ -33,7 +33,7 @@ export default function Decisoes() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Decisões compartilhadas</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Acordos</h1>
           <p className="text-sm text-gray-500 mt-0.5">A memória oficial da coparentalidade</p>
         </div>
         {permissions.canAdd && (
