@@ -814,103 +814,155 @@ function NoteForm({ category, childId, familyId, onClose, onSaved }) {
 
 // ── Vaccination Card ────────────────────────────────────────────────────
 
+const MAX_PHOTOS = 5
+
 function VaccinationCardTab({ child, family }) {
+  const [photos, setPhotos] = useState([]) // [{ path, url }]
   const [uploading, setUploading] = useState(false)
-  const [photoUrl, setPhotoUrl] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const { permissions } = useFamily()
 
-  const bucketPath = `${family?.id}/${child?.id}/vaccination-card`
+  const folder = `${family?.id}/${child?.id}`
 
   useEffect(() => {
     if (!child || !family) return
-    loadPhoto()
+    loadPhotos()
   }, [child, family])
 
-  async function loadPhoto() {
+  async function loadPhotos() {
     setLoading(true)
-    const { data } = await supabase.storage
+    const { data: files } = await supabase.storage
       .from('vaccination-cards')
-      .createSignedUrl(bucketPath, 3600)
-    if (data?.signedUrl) setPhotoUrl(data.signedUrl)
+      .list(folder)
+    if (files?.length) {
+      const signed = await Promise.all(
+        files.map(async f => {
+          const path = `${folder}/${f.name}`
+          const { data } = await supabase.storage
+            .from('vaccination-cards')
+            .createSignedUrl(path, 3600)
+          return data?.signedUrl ? { path, url: data.signedUrl } : null
+        })
+      )
+      setPhotos(signed.filter(Boolean))
+    }
     setLoading(false)
   }
 
   async function handleUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 10 * 1024 * 1024) { setError('Arquivo muito grande. Máx 10 MB.'); return }
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const slots = MAX_PHOTOS - photos.length
+    const toUpload = files.slice(0, slots)
+    if (toUpload.length < files.length)
+      setError(`Limite de ${MAX_PHOTOS} fotos atingido. Apenas ${toUpload.length} arquivo(s) enviados.`)
+    else setError('')
+
+    const usedNums = photos.map(p => {
+      const m = p.path.match(/vaccination-card-(\d+)/)
+      return m ? parseInt(m[1]) : 0
+    })
+
     setUploading(true)
-    setError('')
-    const ext = file.name.split('.').pop()
-    const path = `${family.id}/${child.id}/vaccination-card.${ext}`
-    const { error: uploadError } = await supabase.storage
-      .from('vaccination-cards')
-      .upload(path, file, { upsert: true })
-    if (uploadError) {
-      setError('Erro ao enviar foto. Verifique se o bucket "vaccination-cards" existe no Supabase Storage.')
-    } else {
-      const { data } = await supabase.storage.from('vaccination-cards').createSignedUrl(path, 3600)
-      if (data?.signedUrl) setPhotoUrl(data.signedUrl)
+    const newPhotos = []
+    for (const file of toUpload) {
+      if (file.size > 10 * 1024 * 1024) { setError(`${file.name}: máx 10 MB.`); continue }
+      let slot = 1
+      while (usedNums.includes(slot)) slot++
+      usedNums.push(slot)
+      const ext = file.name.split('.').pop().toLowerCase()
+      const path = `${folder}/vaccination-card-${slot}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('vaccination-cards')
+        .upload(path, file, { upsert: true })
+      if (uploadError) {
+        setError('Erro ao enviar. Tente novamente.')
+      } else {
+        const { data } = await supabase.storage.from('vaccination-cards').createSignedUrl(path, 3600)
+        if (data?.signedUrl) newPhotos.push({ path, url: data.signedUrl })
+      }
     }
+    setPhotos(prev => [...prev, ...newPhotos])
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  async function handleRemove(photo) {
+    setUploading(true)
+    await supabase.storage.from('vaccination-cards').remove([photo.path])
+    setPhotos(prev => prev.filter(p => p.path !== photo.path))
     setUploading(false)
   }
 
-  async function handleRemove() {
-    setUploading(true)
-    await supabase.storage.from('vaccination-cards').remove([bucketPath])
-    setPhotoUrl(null)
-    setUploading(false)
-  }
+  const canAddMore = permissions.canAdd && photos.length < MAX_PHOTOS
 
   return (
     <div className="max-w-lg">
-      <div className="card mb-4">
-        <h3 className="section-title mb-1">Foto do cartão de vacinação</h3>
-        <p className="body-sm text-slate-400 mb-4">Envie uma foto do cartão físico de vacinação de {child?.name}.</p>
+      <div className="card">
+        <h3 className="section-title mb-1">Fotos do cartão de vacinação</h3>
+        <p className="body-sm text-slate-400 mb-4">
+          Até {MAX_PHOTOS} fotos do cartão físico de {child?.name} · JPG, PNG ou PDF · Máx 10 MB cada
+        </p>
 
         {loading ? (
-          <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
-        ) : photoUrl ? (
-          <div className="space-y-3">
-            <img src={photoUrl} alt="Cartão de vacinação" className="w-full rounded-xl border border-gray-100 object-contain max-h-96" />
-            {permissions.canAdd && (
-              <div className="flex gap-2">
-                <label className="flex-1 cursor-pointer">
-                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUpload} disabled={uploading} />
-                  <span className="btn-secondary w-full flex items-center justify-center gap-2 py-2.5 text-sm">
-                    {uploading ? 'Enviando…' : 'Substituir foto'}
-                  </span>
-                </label>
-                <button onClick={handleRemove} disabled={uploading}
-                  className="btn-danger px-4 py-2.5 text-sm">
-                  Remover
-                </button>
-              </div>
-            )}
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2].map(i => <div key={i} className="h-40 bg-gray-100 rounded-xl animate-pulse" />)}
           </div>
         ) : (
-          permissions.canAdd ? (
-            <label className="cursor-pointer block">
-              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUpload} disabled={uploading} />
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center hover:border-brand-300 hover:bg-brand-50/30 transition-colors">
-                <div className="text-3xl mb-3">📷</div>
-                <p className="text-sm font-medium text-gray-600">{uploading ? 'Enviando…' : 'Clique para enviar foto'}</p>
-                <p className="text-xs text-gray-400 mt-1">JPG, PNG ou PDF · Máx 10 MB</p>
+          <div className="space-y-3">
+            {(photos.length > 0 || canAddMore) && (
+              <div className="grid grid-cols-2 gap-3">
+                {photos.map((photo, idx) => (
+                  <div key={photo.path} className="relative group">
+                    <img
+                      src={photo.url}
+                      alt={`Cartão ${idx + 1}`}
+                      className="w-full h-40 object-cover rounded-xl border border-gray-100"
+                    />
+                    {permissions.canAdd && (
+                      <button
+                        onClick={() => handleRemove(photo)}
+                        disabled={uploading}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500 disabled:opacity-40"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {canAddMore && (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file" accept="image/*,application/pdf"
+                      multiple className="hidden"
+                      onChange={handleUpload} disabled={uploading}
+                    />
+                    <div className="h-40 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 hover:border-brand-300 hover:bg-brand-50/30 transition-colors">
+                      {uploading ? (
+                        <p className="text-xs text-slate-400">Enviando…</p>
+                      ) : (
+                        <>
+                          <span className="text-2xl text-gray-300">+</span>
+                          <span className="text-xs text-gray-400">
+                            {photos.length === 0 ? 'Adicionar fotos' : `${MAX_PHOTOS - photos.length} restante${MAX_PHOTOS - photos.length !== 1 ? 's' : ''}`}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </label>
+                )}
               </div>
-            </label>
-          ) : (
-            <div className="text-center py-10 text-gray-400 text-sm">Nenhum cartão enviado ainda.</div>
-          )
+            )}
+
+            {photos.length === 0 && !permissions.canAdd && (
+              <div className="text-center py-10 text-gray-400 text-sm">Nenhum cartão enviado ainda.</div>
+            )}
+          </div>
         )}
 
         {error && <p className="mt-3 text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
-      </div>
-
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-700">
-        <p className="font-semibold mb-1">Para ativar o envio de fotos:</p>
-        <p>Crie o bucket <code className="bg-amber-100 px-1 rounded">vaccination-cards</code> no Supabase Storage com acesso privado e política RLS para membros da família.</p>
       </div>
     </div>
   )
