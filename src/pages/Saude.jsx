@@ -83,21 +83,6 @@ export default function Saude() {
 
       {tab === 'vacinas' && (
         <div className="space-y-5">
-          {overdueVaccines.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-                Em atraso ({overdueVaccines.length})
-              </h3>
-              <div className="space-y-2">
-                {overdueVaccines.map(v => (
-                  <VaccineRow key={v.id} vaccine={v} status="overdue"
-                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
-                ))}
-              </div>
-            </div>
-          )}
-
           {upcomingVaccines.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-amber-600 mb-2 flex items-center gap-1.5">
@@ -109,6 +94,21 @@ export default function Saude() {
                   <VaccineRow key={v.id} vaccine={v} status="upcoming"
                     onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
                   />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {overdueVaccines.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                Em atraso ({overdueVaccines.length})
+              </h3>
+              <div className="space-y-2">
+                {overdueVaccines.map(v => (
+                  <VaccineRow key={v.id} vaccine={v} status="overdue"
+                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
                 ))}
               </div>
             </div>
