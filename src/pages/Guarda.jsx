@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOf
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate } from '../lib/guard'
+import { getGuardForDate, getGuardWeekStart } from '../lib/guard'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -24,6 +24,7 @@ export default function Guarda() {
   const [swaps, setSwaps] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
+  const [dayAction, setDayAction] = useState(null)
   const [tab, setTab] = useState('calendar')
 
   useEffect(() => {
@@ -40,17 +41,28 @@ export default function Guarda() {
     setSwaps(data || [])
   }
 
-  function getManualOverride(day) {
+  function getOverrideForDay(day) {
     const dayStr = format(day, 'yyyy-MM-dd')
     for (const s of swaps) {
       if (!s.reason?.startsWith('[override:')) continue
       const start = s.requested_date
       const end = s.proposed_exchange_date || s.requested_date
-      if (dayStr >= start && dayStr <= end) {
-        return s.reason.match(/\[override:(mother|father)\]/)?.[1] || null
-      }
+      if (dayStr >= start && dayStr <= end) return s
     }
     return null
+  }
+
+  function getManualOverride(day) {
+    const s = getOverrideForDay(day)
+    return s?.reason.match(/\[override:(mother|father)\]/)?.[1] || null
+  }
+
+  function openDayAction(day) {
+    if (!guardPattern || !permissions.canEdit) return
+    const override = getOverrideForDay(day)
+    const overrideGuardian = override?.reason.match(/\[override:(mother|father)\]/)?.[1] || null
+    const currentGuardian = overrideGuardian || getGuardForDate(day, guardPattern)
+    setDayAction({ day, currentGuardian, override })
   }
 
   function getDayStyle(day) {
@@ -170,8 +182,16 @@ export default function Guarda() {
                 const isTodayDay = isToday(day)
                 const style = isCurrentMonth ? getDayStyle(day) : {}
                 const isTuesday = getDay(day) === 2
+                const clickable = isCurrentMonth && guardPattern && permissions.canEdit
                 return (
-                  <div key={i} className={`min-h-[48px] p-1.5 border-b border-r border-gray-50 ${!isCurrentMonth ? 'opacity-25' : ''}`} style={style}>
+                  <div
+                    key={i}
+                    onClick={clickable ? () => openDayAction(day) : undefined}
+                    role={clickable ? 'button' : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    onKeyDown={clickable ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDayAction(day) } }) : undefined}
+                    className={`min-h-[48px] p-1.5 border-b border-r border-gray-50 ${!isCurrentMonth ? 'opacity-25' : ''} ${clickable ? 'cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-inset' : ''}`}
+                    style={style}>
                     <span className={`text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full ${isTodayDay ? 'bg-brand-600 text-white' : 'text-gray-700'}`}>
                       {format(day, 'd')}
                     </span>
@@ -251,6 +271,158 @@ export default function Guarda() {
       {showManualForm && (
         <ManualOverrideForm familyId={family?.id} members={members} onClose={() => setShowManualForm(false)} onSaved={() => { setShowManualForm(false); loadSwaps() }} />
       )}
+      {dayAction && (
+        <DayActionModal
+          day={dayAction.day}
+          currentGuardian={dayAction.currentGuardian}
+          override={dayAction.override}
+          familyId={family?.id}
+          members={members}
+          guardPattern={guardPattern}
+          setGuardPattern={setGuardPattern}
+          onClose={() => setDayAction(null)}
+          onSaved={() => { setDayAction(null); loadSwaps() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function DayActionModal({ day, currentGuardian, override, familyId, members, guardPattern, setGuardPattern, onClose, onSaved }) {
+  const { guardianColors, guardianLabels, getCurrentUserMember } = useFamily()
+  const [saving, setSaving] = useState(false)
+
+  const otherGuardian = currentGuardian === 'mother' ? 'father' : 'mother'
+  const currentColor = currentGuardian ? guardianColors[currentGuardian] : null
+  const otherColor = otherGuardian ? guardianColors[otherGuardian] : null
+
+  const weekStart = getGuardWeekStart(day, guardPattern?.switch_day ?? 2)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekEnd.getDate() + 6)
+
+  const dayStr = format(day, 'yyyy-MM-dd')
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd')
+  const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
+
+  async function overrideRange(startStr, endStr) {
+    const me = getCurrentUserMember()
+    await supabase.from('guard_swaps').insert({
+      family_id: familyId,
+      requested_date: startStr,
+      proposed_exchange_date: endStr,
+      reason: `[override:${otherGuardian}]`,
+      requested_by: me?.id || null,
+      status: 'accepted',
+      resolved_at: new Date().toISOString(),
+    })
+  }
+
+  async function handleDay() {
+    setSaving(true)
+    await overrideRange(dayStr, dayStr)
+    onSaved()
+  }
+
+  async function handleWeek() {
+    setSaving(true)
+    await overrideRange(weekStartStr, weekEndStr)
+    onSaved()
+  }
+
+  async function handleReorganize() {
+    if (!guardPattern) return
+    setSaving(true)
+    const refMember = members.find(m => m.role === otherGuardian)
+    const newPattern = {
+      reference_date: weekStartStr,
+      reference_guardian: otherGuardian,
+      ...(refMember ? { reference_member_id: refMember.id } : {}),
+    }
+    await supabase.from('guard_patterns').update(newPattern).eq('id', guardPattern.id)
+    const me = getCurrentUserMember()
+    await supabase.from('guard_swaps').insert({
+      family_id: familyId,
+      requested_date: weekStartStr,
+      proposed_exchange_date: weekStartStr,
+      reason: `[reorganized:${otherGuardian}] A partir de ${format(weekStart, 'dd/MM/yyyy')}`,
+      requested_by: me?.id || null,
+      status: 'accepted',
+      resolved_at: new Date().toISOString(),
+    })
+    setGuardPattern({ ...guardPattern, ...newPattern })
+    onSaved()
+  }
+
+  async function handleRemoveOverride() {
+    if (!override) return
+    setSaving(true)
+    await supabase.from('guard_swaps').delete().eq('id', override.id)
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold text-gray-800">
+              {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            </h3>
+            {currentColor && (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: currentColor.hex }} />
+                <p className="text-xs text-gray-500">
+                  Atualmente com <span className="font-medium" style={{ color: currentColor.hex }}>{guardianLabels[currentGuardian]}</span>
+                  {override && <span className="ml-1 text-amber-600">· ajuste manual</span>}
+                </p>
+              </div>
+            )}
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-500 mb-4">
+          Passar para <span className="font-medium" style={otherColor ? { color: otherColor.hex } : {}}>{guardianLabels[otherGuardian]}</span>:
+        </p>
+
+        <div className="space-y-2">
+          <button onClick={handleDay} disabled={saving}
+            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
+            <p className="text-sm font-medium text-gray-800">Só neste dia</p>
+            <p className="text-xs text-gray-500 mt-0.5">Ajuste pontual — o resto do calendário não muda.</p>
+          </button>
+
+          <button onClick={handleWeek} disabled={saving}
+            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
+            <p className="text-sm font-medium text-gray-800">Só esta semana</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Inverte de {format(weekStart, 'dd/MM')} até {format(weekEnd, 'dd/MM')}. As próximas semanas seguem o padrão original.
+            </p>
+          </button>
+
+          <button onClick={handleReorganize} disabled={saving}
+            className="w-full text-left p-4 rounded-xl border border-brand-200 bg-brand-50/40 hover:bg-brand-50 hover:border-brand-400 transition-colors disabled:opacity-50">
+            <p className="text-sm font-medium text-brand-700">A partir daqui, inverter</p>
+            <p className="text-xs text-brand-600/80 mt-0.5">
+              A alternância se readequa: a semana de {format(weekStart, 'dd/MM')} passa a ser de {guardianLabels[otherGuardian]} e as próximas semanas alternam a partir daí.
+            </p>
+          </button>
+        </div>
+
+        {override && (
+          <button onClick={handleRemoveOverride} disabled={saving}
+            className="w-full mt-3 py-2.5 border border-red-100 text-red-600 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
+            Remover ajuste manual existente
+          </button>
+        )}
+
+        <button onClick={onClose} disabled={saving}
+          className="w-full mt-3 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
+          Cancelar
+        </button>
+      </div>
     </div>
   )
 }

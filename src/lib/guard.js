@@ -9,7 +9,7 @@
  * Get the start of the guard week for a given date.
  * Guard week starts on switchDay (0=Sun, 1=Mon, 2=Tue...).
  */
-function getGuardWeekStart(date, switchDay = 2) {
+export function getGuardWeekStart(date, switchDay = 2) {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   const day = d.getDay()
