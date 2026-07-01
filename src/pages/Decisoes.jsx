@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { EmptyState, EmptyDecisions } from '../components/illustrations'
 
 export default function Decisoes() {
   const { family, members, permissions } = useFamily()
@@ -57,19 +58,17 @@ export default function Decisoes() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <p className="text-4xl mb-3">🤝</p>
-          <p className="font-medium text-gray-600">
-            {search ? 'Nenhuma decisão encontrada' : 'Nenhuma decisão registrada ainda'}
-          </p>
-          <p className="text-sm text-gray-400 mt-1">
-            {!search && 'Registre as decisões acordadas entre os pais para manter um histórico claro'}
-          </p>
-          {!search && permissions.canAdd && (
-            <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-              Primeira decisão
-            </button>
-          )}
+        <div className="bg-white rounded-2xl border border-gray-100 py-8">
+          <EmptyState
+            art={<EmptyDecisions />}
+            title={search ? 'Nenhuma decisão encontrada' : 'Nenhuma decisão registrada ainda'}
+            subtitle={!search && 'Registre as decisões acordadas entre os pais para manter um histórico claro entre as duas casas.'}
+            action={!search && permissions.canAdd && (
+              <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                Primeira decisão
+              </button>
+            )}
+          />
         </div>
       ) : (
         <div className="space-y-3">

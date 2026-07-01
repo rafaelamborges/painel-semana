@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { HeroFamily, CompassMascot } from '../components/illustrations'
 
 export default function Login() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
@@ -47,20 +48,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-100 mb-4">
-            <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="16" r="14" fill="#ede9fe" stroke="#6d28d9" strokeWidth="2"/>
-              <circle cx="16" cy="16" r="2" fill="#6d28d9"/>
-              <polygon points="16,4 18,16 16,14 14,16" fill="#6d28d9"/>
-              <polygon points="16,28 14,16 16,18 18,16" fill="#9ca3af"/>
-              <polygon points="4,16 16,14 14,16 16,18" fill="#9ca3af"/>
-              <polygon points="28,16 16,18 18,16 16,14" fill="#6d28d9"/>
-            </svg>
-          </div>
+        {/* Hero + Logo */}
+        <div className="mb-6">
+          <HeroFamily className="w-full drop-shadow-sm" />
+        </div>
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-brand-700">Compasso</h1>
-          <p className="text-gray-500 mt-1 text-sm">Acompanhamento infantil para famílias</p>
+          <p className="text-gray-500 mt-1 text-sm">Rotina, saúde e escola em harmonia entre as duas casas</p>
         </div>
 
         {!isSupabaseConfigured && (
@@ -143,15 +137,8 @@ function DemoMode() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 p-4">
       <div className="w-full max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-100 mb-4">
-          <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" fill="#ede9fe" stroke="#6d28d9" strokeWidth="2"/>
-            <circle cx="16" cy="16" r="2" fill="#6d28d9"/>
-            <polygon points="16,4 18,16 16,14 14,16" fill="#6d28d9"/>
-            <polygon points="16,28 14,16 16,18 18,16" fill="#9ca3af"/>
-            <polygon points="4,16 16,14 14,16 16,18" fill="#9ca3af"/>
-            <polygon points="28,16 16,18 18,16 16,14" fill="#6d28d9"/>
-          </svg>
+        <div className="inline-block mb-4">
+          <CompassMascot size={96} wave />
         </div>
         <h1 className="text-3xl font-bold text-brand-700 mb-2">Compasso</h1>
         <p className="text-gray-500 text-sm mb-6">Configure as variáveis de ambiente do Supabase para ativar o login.</p>

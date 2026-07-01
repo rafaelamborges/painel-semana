@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { EmptyState, EmptyAchievements } from '../components/illustrations'
 
 const CATEGORIES = [
   { id: 'academic', label: 'Escolar', emoji: '📚', color: 'blue' },
@@ -75,13 +76,17 @@ export default function Conquistas() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <p className="text-4xl mb-3">🏆</p>
-          <p className="font-medium text-gray-600">Nenhuma conquista ainda</p>
-          <p className="text-sm text-gray-400 mt-1">Registre as conquistas de {child?.name} e celebre cada progresso!</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-            Registrar conquista
-          </button>
+        <div className="bg-white rounded-2xl border border-gray-100 py-8">
+          <EmptyState
+            art={<EmptyAchievements />}
+            title="Nenhuma conquista ainda"
+            subtitle={`Registre as conquistas de ${child?.name || 'seu filho'} e celebre cada progresso.`}
+            action={
+              <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                Registrar conquista
+              </button>
+            }
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

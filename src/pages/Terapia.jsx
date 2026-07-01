@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, GUARDIAN_LABELS, GUARDIAN_COLORS } from '../lib/guard'
+import { EmptyState, EmptyTherapy } from '../components/illustrations'
 
 export default function Terapia() {
   const { child, members, guardPattern, getCurrentUserMember } = useFamily()
@@ -60,13 +61,17 @@ export default function Terapia() {
 
       {/* Timeline */}
       {records.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <p className="text-4xl mb-3">🧠</p>
-          <p className="font-medium text-gray-600">Nenhum registro de terapia ainda</p>
-          <p className="text-sm text-gray-400 mt-1">Registre observações semanais sobre o desenvolvimento emocional</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-            Primeiro registro
-          </button>
+        <div className="bg-white rounded-2xl border border-gray-100 py-8">
+          <EmptyState
+            art={<EmptyTherapy />}
+            title="Nenhum registro de terapia ainda"
+            subtitle="Anote observações semanais sobre o desenvolvimento emocional. Poucos parágrafos já ajudam a ver o quadro geral."
+            action={
+              <button onClick={() => setShowForm(true)} className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                Primeiro registro
+              </button>
+            }
+          />
         </div>
       ) : (
         <div className="space-y-4">

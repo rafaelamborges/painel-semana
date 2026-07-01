@@ -5,6 +5,7 @@ import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getVaccineAlerts } from '../lib/pni'
 import { getGuardForDate } from '../lib/guard'
+import { EmptyState, EmptyReminders } from '../components/illustrations'
 
 export default function Lembretes() {
   const { child, family, guardPattern } = useFamily()
@@ -164,10 +165,12 @@ export default function Lembretes() {
           <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : sortedAlerts.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <p className="text-4xl mb-3">✅</p>
-          <p className="font-medium text-gray-600">Tudo em dia!</p>
-          <p className="text-sm text-gray-400 mt-1">Nenhum alerta no momento</p>
+        <div className="bg-white rounded-2xl border border-gray-100 py-8">
+          <EmptyState
+            art={<EmptyReminders />}
+            title="Tudo em dia!"
+            subtitle="Nenhum alerta no momento — aproveite o dia com tranquilidade."
+          />
         </div>
       ) : (
         <div className="space-y-3">

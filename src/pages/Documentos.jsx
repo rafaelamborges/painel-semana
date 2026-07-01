@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { EmptyState, EmptyDocuments } from '../components/illustrations'
 
 const MAX_DOCS = 20
 const MAX_SIZE_MB = 10
@@ -148,22 +149,20 @@ export default function Documentos() {
           ))}
         </div>
       ) : docs.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <FolderIcon className="w-8 h-8 text-gray-300" />
-          </div>
-          <p className="text-gray-600 font-medium">Nenhum documento ainda</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Adicione documentos importantes de {child?.name ?? 'sua criança'}
-          </p>
-          {permissions.canAdd && (
-            <button
-              onClick={() => setShowUpload(true)}
-              className="mt-5 px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-            >
-              + Adicionar primeiro documento
-            </button>
-          )}
+        <div className="bg-white rounded-2xl border border-gray-100 py-8">
+          <EmptyState
+            art={<EmptyDocuments />}
+            title="Nenhum documento ainda"
+            subtitle={`Guarde certidões, RG, cartão de vacinação e outros documentos importantes de ${child?.name ?? 'sua criança'}.`}
+            action={permissions.canAdd && (
+              <button
+                onClick={() => setShowUpload(true)}
+                className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
+              >
+                + Adicionar primeiro documento
+              </button>
+            )}
+          />
         </div>
       ) : (
         <>

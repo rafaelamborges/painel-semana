@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateVaccinationSchedule } from '../lib/pni'
+import { EmptyState, EmptyDoctor } from '../components/illustrations'
 
 export default function Saude() {
   const { child, family, permissions } = useFamily()
@@ -145,8 +146,18 @@ export default function Saude() {
           )}
 
           {consultations.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-              <p className="text-gray-400">Nenhuma consulta registrada</p>
+            <div className="bg-white rounded-2xl border border-gray-100 py-8">
+              <EmptyState
+                art={<EmptyDoctor />}
+                title="Nenhuma consulta registrada"
+                subtitle="Registre consultas, retornos e observações do médico. Fica tudo acessível quando o cuidado passa de uma casa para outra."
+                action={permissions.canAdd && (
+                  <button onClick={() => setShowConsultationForm(true)}
+                    className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
+                    Registrar consulta
+                  </button>
+                )}
+              />
             </div>
           ) : (
             <div className="space-y-3">

@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, getGuardWeekStart } from '../lib/guard'
+import { EmptyState, EmptySwaps, EmptyCalendar } from '../components/illustrations'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -242,10 +243,16 @@ export default function Guarda() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5">
             <h3 className="font-semibold text-gray-800 mb-4">Trocas solicitadas</h3>
             {swaps.filter(s => !s.reason?.startsWith('[override:') && !s.reason?.startsWith('[reorganized:')).length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-400 text-sm">Nenhuma troca registrada ainda</p>
-                <button onClick={() => setShowSwapForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">Solicitar primeira troca</button>
-              </div>
+              <EmptyState
+                art={<EmptySwaps size={100} />}
+                title="Nenhuma troca registrada ainda"
+                subtitle="Precisa de flexibilidade em algum dia? Solicite uma troca e combine com a outra casa aqui mesmo."
+                action={
+                  <button onClick={() => setShowSwapForm(true)} className="text-xs text-brand-600 font-medium hover:underline">
+                    Solicitar primeira troca
+                  </button>
+                }
+              />
             ) : (
               <div className="space-y-3">
                 {swaps.filter(s => !s.reason?.startsWith('[override:') && !s.reason?.startsWith('[reorganized:')).map(swap => (
@@ -847,11 +854,12 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
 function HistoryTab({ swaps, members }) {
   if (swaps.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </div>
-        <p className="text-gray-400 text-sm">Nenhum evento registrado ainda</p>
+      <div className="bg-white rounded-2xl border border-gray-100 py-8">
+        <EmptyState
+          art={<EmptyCalendar size={100} />}
+          title="Nenhum evento registrado ainda"
+          subtitle="Todas as trocas e ajustes na rotina vão aparecer aqui, em ordem cronológica."
+        />
       </div>
     )
   }

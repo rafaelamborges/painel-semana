@@ -6,6 +6,7 @@ import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate } from '../lib/guard'
 import { getVaccineAlerts } from '../lib/pni'
+import { CompassMascot } from '../components/illustrations'
 
 export default function Dashboard() {
   const { child, family, members, guardPattern, guardianColors, guardianLabels } = useFamily()
@@ -74,13 +75,23 @@ export default function Dashboard() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="page-title">
-          {greeting()}! {child ? `Olhando pelo ${child.name}` : 'Bem-vindo ao Compasso'}
-        </h1>
-        <p className="body-sm mt-0.5 capitalize">
-          {format(today, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-        </p>
+      <div className="relative overflow-hidden rounded-3xl p-5 sm:p-6 border"
+        style={{ background: 'linear-gradient(120deg, #FFF7ED 0%, #EEF2FF 60%, #FBCFE8 130%)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">
+            <CompassMascot size={72} wave />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="page-title">
+              {greeting()}! {child ? `Olhando pelo ${child.name}` : 'Bem-vindo ao Compasso'}
+            </h1>
+            <p className="body-sm mt-0.5 capitalize">
+              {format(today, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            </p>
+          </div>
+        </div>
+        <div className="absolute -right-8 -bottom-10 w-40 h-40 rounded-full opacity-30 pointer-events-none"
+          style={{ background: 'radial-gradient(closest-side, #FDBA74, transparent)' }} />
       </div>
 
       {/* Guard card */}
