@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { EmptyState, EmptyDocuments } from '../components/illustrations'
@@ -49,10 +50,12 @@ create policy "Family members manage files"
 export default function Documentos() {
   const { family, child, permissions } = useFamily()
   const [docs, setDocs] = useState([])
+  const [decisionsById, setDecisionsById] = useState({})
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [viewer, setViewer] = useState(null)
   const [setupRequired, setSetupRequired] = useState(false)
+  const [tab, setTab] = useState('todos')
 
   const loadDocs = useCallback(async () => {
     if (!family || !child) return
@@ -67,11 +70,32 @@ export default function Documentos() {
       setSetupRequired(true)
     } else {
       setDocs(data || [])
+      const decisionIds = [...new Set((data || []).map(d => d.decision_id).filter(Boolean))]
+      if (decisionIds.length) {
+        const { data: decs } = await supabase
+          .from('shared_decisions')
+          .select('id, subject')
+          .in('id', decisionIds)
+        setDecisionsById(Object.fromEntries((decs || []).map(d => [d.id, d])))
+      } else {
+        setDecisionsById({})
+      }
     }
     setLoading(false)
   }, [family, child])
 
   useEffect(() => { loadDocs() }, [loadDocs])
+
+  const filteredDocs = docs.filter(d => {
+    if (tab === 'gerais')  return !d.decision_id
+    if (tab === 'acordos') return !!d.decision_id
+    return true
+  })
+  const counts = {
+    todos:   docs.length,
+    gerais:  docs.filter(d => !d.decision_id).length,
+    acordos: docs.filter(d => !!d.decision_id).length,
+  }
 
   async function openViewer(doc) {
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(doc.file_path, 300)
@@ -136,6 +160,21 @@ export default function Documentos() {
         )}
       </div>
 
+      {!loading && docs.length > 0 && (
+        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
+          {[
+            { id: 'todos',   label: 'Todos'      },
+            { id: 'gerais',  label: 'Gerais'     },
+            { id: 'acordos', label: 'De acordos' },
+          ].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${tab === t.id ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
+              {t.label} <span className="text-xs opacity-60 ml-1">{counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -164,11 +203,22 @@ export default function Documentos() {
             )}
           />
         </div>
+      ) : filteredDocs.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 py-10 text-center text-sm text-gray-400">
+          Nenhum arquivo {tab === 'acordos' ? 'anexado a um acordo' : 'geral'} nesta pasta.
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {docs.map(doc => (
-              <DocCard key={doc.id} doc={doc} onOpen={openViewer} onDelete={deleteDoc} canDelete={permissions.canDelete} />
+            {filteredDocs.map(doc => (
+              <DocCard
+                key={doc.id}
+                doc={doc}
+                decision={doc.decision_id ? decisionsById[doc.decision_id] : null}
+                onOpen={openViewer}
+                onDelete={deleteDoc}
+                canDelete={permissions.canDelete}
+              />
             ))}
           </div>
           {docs.length >= MAX_DOCS && (
@@ -195,7 +245,7 @@ export default function Documentos() {
   )
 }
 
-function DocCard({ doc, onOpen, onDelete, canDelete }) {
+function DocCard({ doc, decision, onOpen, onDelete, canDelete }) {
   const [thumbUrl, setThumbUrl] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -249,6 +299,19 @@ function DocCard({ doc, onOpen, onDelete, canDelete }) {
         <p className="text-sm font-medium text-gray-800 truncate leading-tight" title={doc.name}>
           {doc.name}
         </p>
+        {decision && (
+          <Link
+            to={`/decisoes?decision=${decision.id}`}
+            onClick={e => e.stopPropagation()}
+            className="mt-1 flex items-center gap-1 text-[10px] text-brand-600 hover:text-brand-700 truncate"
+            title={`Ver acordo: ${decision.subject}`}
+          >
+            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <span className="truncate">Acordo: {decision.subject}</span>
+          </Link>
+        )}
         <div className="flex items-center justify-between mt-1.5">
           <span className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">
             {doc.file_type === 'pdf' ? 'PDF' : 'Imagem'}
