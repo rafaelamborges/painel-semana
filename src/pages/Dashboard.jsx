@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { format, isToday, isTomorrow, differenceInDays, parseISO } from 'date-fns'
+import { format, isToday, isTomorrow, differenceInDays, parseISO,
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval,
+  isSameMonth, addMonths, subMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate } from '../lib/guard'
 import { getVaccineAlerts } from '../lib/pni'
 import { CompassMascot } from '../components/illustrations'
+
+const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 
 export default function Dashboard() {
   const { child, family, members, guardPattern, guardianColors, guardianLabels } = useFamily()
@@ -152,6 +156,14 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Monthly calendar with guard + events */}
+      <HomeCalendar
+        familyId={family?.id}
+        guardPattern={guardPattern}
+        guardianColors={guardianColors}
+        guardianLabels={guardianLabels}
+      />
+
       {/* Quick links */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -214,6 +226,131 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function HomeCalendar({ familyId, guardPattern, guardianColors, guardianLabels }) {
+  const [month, setMonth] = useState(() => new Date())
+  const [monthEvents, setMonthEvents] = useState([])
+  const [swaps, setSwaps] = useState([])
+
+  const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
+  const gridEnd   = endOfWeek(endOfMonth(month),    { weekStartsOn: 0 })
+  const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [month])
+
+  useEffect(() => {
+    if (!familyId) return
+    const from = startOfMonth(month).toISOString()
+    const to   = endOfMonth(month).toISOString()
+    supabase.from('calendar_events')
+      .select('id, title, start_at')
+      .eq('family_id', familyId)
+      .gte('start_at', from).lte('start_at', to)
+      .then(({ data }) => setMonthEvents(data || []))
+    supabase.from('guard_swaps')
+      .select('id, requested_date, proposed_exchange_date, reason, status')
+      .eq('family_id', familyId)
+      .then(({ data }) => setSwaps(data || []))
+  }, [familyId, month])
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map()
+    for (const ev of monthEvents) {
+      const key = format(parseISO(ev.start_at), 'yyyy-MM-dd')
+      const list = map.get(key) || []
+      list.push(ev)
+      map.set(key, list)
+    }
+    return map
+  }, [monthEvents])
+
+  function getManualOverride(day) {
+    const dayStr = format(day, 'yyyy-MM-dd')
+    for (const s of swaps) {
+      if (!s.reason?.startsWith('[override:')) continue
+      const start = s.requested_date
+      const end = s.proposed_exchange_date || s.requested_date
+      if (dayStr >= start && dayStr <= end) {
+        return s.reason.match(/\[override:(mother|father)\]/)?.[1] || null
+      }
+    }
+    return null
+  }
+
+  function guardianForDay(day) {
+    if (!guardPattern) return null
+    return getManualOverride(day) || getGuardForDate(day, guardPattern)
+  }
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setMonth(m => subMonths(m, 1))}
+            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Mês anterior">
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 className="section-title capitalize">{format(month, 'MMMM yyyy', { locale: ptBR })}</h2>
+          <button onClick={() => setMonth(m => addMonths(m, 1))}
+            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Próximo mês">
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-slate-500">
+          {['mother', 'father'].map(g => (
+            <div key={g} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: guardianColors[g]?.hex }} />
+              <span>{guardianLabels[g]}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            <span>evento</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 mb-1">
+        {WEEKDAYS.map((d, i) => (
+          <div key={i} className="text-center text-[10px] font-medium text-slate-400 py-1">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => {
+          const inMonth = isSameMonth(day, month)
+          const today = isToday(day)
+          const guardian = inMonth ? guardianForDay(day) : null
+          const color = guardian ? guardianColors[guardian] : null
+          const dayEvents = eventsByDay.get(format(day, 'yyyy-MM-dd')) || []
+
+          return (
+            <div key={i}
+              className={`relative aspect-square rounded-lg p-1 flex flex-col items-center justify-start ${!inMonth ? 'opacity-30' : ''}`}
+              style={color ? { backgroundColor: color.hex + '18' } : {}}>
+              <span className={`text-xs font-medium inline-flex w-5 h-5 items-center justify-center rounded-full ${today ? 'bg-brand-600 text-white' : ''}`}
+                style={!today && color ? { color: color.hex } : {}}>
+                {format(day, 'd')}
+              </span>
+              {dayEvents.length > 0 && (
+                <div className="flex gap-0.5 mt-auto pb-0.5" title={dayEvents.map(e => e.title).join(' · ')}>
+                  {dayEvents.slice(0, 3).map((_, idx) => (
+                    <span key={idx} className="w-1 h-1 rounded-full bg-slate-500" />
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <span className="text-[8px] leading-none text-slate-500 ml-0.5">+{dayEvents.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
