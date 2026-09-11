@@ -10,7 +10,7 @@ import { getGuardForDate } from '../lib/guard'
 import { getVaccineAlerts } from '../lib/pni'
 import { CompassMascot } from '../components/illustrations'
 
-const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 export default function Dashboard() {
   const { child, family, members, guardPattern, guardianColors, guardianLabels } = useFamily()
@@ -236,18 +236,21 @@ function HomeCalendar({ familyId, guardPattern, guardianColors, guardianLabels }
   const [monthEvents, setMonthEvents] = useState([])
   const [swaps, setSwaps] = useState([])
 
-  const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 0 })
-  const gridEnd   = endOfWeek(endOfMonth(month),    { weekStartsOn: 0 })
+  const monthStart = startOfMonth(month)
+  const monthEnd   = endOfMonth(month)
+  const gridStart  = startOfWeek(monthStart, { weekStartsOn: 0 })
+  const gridEnd    = endOfWeek(monthEnd,     { weekStartsOn: 0 })
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [month])
 
   useEffect(() => {
     if (!familyId) return
-    const from = startOfMonth(month).toISOString()
-    const to   = endOfMonth(month).toISOString()
+    const from = monthStart.toISOString()
+    const to   = monthEnd.toISOString()
     supabase.from('calendar_events')
       .select('id, title, start_at')
       .eq('family_id', familyId)
       .gte('start_at', from).lte('start_at', to)
+      .order('start_at')
       .then(({ data }) => setMonthEvents(data || []))
     supabase.from('guard_swaps')
       .select('id, requested_date, proposed_exchange_date, reason, status')
@@ -285,72 +288,82 @@ function HomeCalendar({ familyId, guardPattern, guardianColors, guardianLabels }
   }
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+    <div>
+      {guardPattern && (
+        <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+          <span>Guarda:</span>
+          {['mother', 'father'].map(g => (
+            <span key={g} className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm inline-block"
+                style={{ backgroundColor: guardianColors[g].lightHex, border: `1.5px solid ${guardianColors[g].hex}` }} />
+              {guardianLabels[g]}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <button onClick={() => setMonth(m => subMonths(m, 1))}
-            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Mês anterior">
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Mês anterior">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h2 className="section-title capitalize">{format(month, 'MMMM yyyy', { locale: ptBR })}</h2>
+          <h2 className="font-semibold text-gray-800 capitalize">
+            {format(month, 'MMMM yyyy', { locale: ptBR })}
+          </h2>
           <button onClick={() => setMonth(m => addMonths(m, 1))}
-            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Próximo mês">
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Próximo mês">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-slate-500">
-          {['mother', 'father'].map(g => (
-            <div key={g} className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: guardianColors[g]?.hex }} />
-              <span>{guardianLabels[g]}</span>
-            </div>
+
+        <div className="grid grid-cols-7 border-b border-gray-100">
+          {WEEKDAYS.map(d => (
+            <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
           ))}
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-            <span>evento</span>
-          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-7 mb-1">
-        {WEEKDAYS.map((d, i) => (
-          <div key={i} className="text-center text-[10px] font-medium text-slate-400 py-1">{d}</div>
-        ))}
-      </div>
+        <div className="grid grid-cols-7">
+          {days.map((day, i) => {
+            const inMonth = isSameMonth(day, month)
+            const today = isToday(day)
+            const guardian = inMonth ? guardianForDay(day) : null
+            const color = guardian ? guardianColors[guardian] : null
+            const dayEvents = eventsByDay.get(format(day, 'yyyy-MM-dd')) || []
 
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day, i) => {
-          const inMonth = isSameMonth(day, month)
-          const today = isToday(day)
-          const guardian = inMonth ? guardianForDay(day) : null
-          const color = guardian ? guardianColors[guardian] : null
-          const dayEvents = eventsByDay.get(format(day, 'yyyy-MM-dd')) || []
-
-          return (
-            <div key={i}
-              className={`relative aspect-square rounded-lg p-1 flex flex-col items-center justify-start ${!inMonth ? 'opacity-30' : ''}`}
-              style={color ? { backgroundColor: color.hex + '18' } : {}}>
-              <span className={`text-xs font-medium inline-flex w-5 h-5 items-center justify-center rounded-full ${today ? 'bg-brand-600 text-white' : ''}`}
-                style={!today && color ? { color: color.hex } : {}}>
-                {format(day, 'd')}
-              </span>
-              {dayEvents.length > 0 && (
-                <div className="flex gap-0.5 mt-auto pb-0.5" title={dayEvents.map(e => e.title).join(' · ')}>
-                  {dayEvents.slice(0, 3).map((_, idx) => (
-                    <span key={idx} className="w-1 h-1 rounded-full bg-slate-500" />
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <span className="text-[8px] leading-none text-slate-500 ml-0.5">+{dayEvents.length - 3}</span>
+            return (
+              <div key={i}
+                className={`min-h-[56px] p-1.5 border-b border-r border-gray-50 text-left relative ${!inMonth ? 'opacity-30' : ''}`}
+                style={color && inMonth ? { backgroundColor: color.lightHex } : {}}>
+                <span className={`
+                  text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full
+                  ${today ? 'bg-brand-600 text-white' : inMonth ? 'text-gray-700' : 'text-gray-300'}
+                `}>
+                  {format(day, 'd')}
+                </span>
+                <div className="mt-0.5 space-y-0.5">
+                  {dayEvents.slice(0, 2).map(ev => {
+                    const evGuard = guardPattern ? getGuardForDate(parseISO(ev.start_at), guardPattern) : null
+                    const evC = evGuard ? guardianColors[evGuard].hex : '#6d28d9'
+                    return (
+                      <div key={ev.id} className="truncate text-[10px] px-1 py-0.5 rounded text-white font-medium"
+                        style={{ backgroundColor: evC }} title={ev.title}>
+                        {ev.title}
+                      </div>
+                    )
+                  })}
+                  {dayEvents.length > 2 && (
+                    <div className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 2}</div>
                   )}
                 </div>
-              )}
-            </div>
-          )
-        })}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
