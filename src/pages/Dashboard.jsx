@@ -77,7 +77,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl p-5 sm:p-6 border"
         style={{ background: 'linear-gradient(120deg, #FFF7ED 0%, #EEF2FF 60%, #FBCFE8 130%)', borderColor: 'var(--border)' }}>

@@ -59,7 +59,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <div className="mb-6">
         <h1 className="page-title">Responsáveis</h1>
         {family?.name && <p className="body-sm mt-0.5">{family.name}</p>}
