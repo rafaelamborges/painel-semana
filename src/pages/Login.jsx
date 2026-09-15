@@ -127,6 +127,11 @@ export default function Login() {
             </button>
           </p>
         </div>
+
+        <p className="text-center text-[11px] text-gray-400 mt-6">
+          Ao entrar, você concorda com a nossa{' '}
+          <a href="/privacidade" className="text-brand-600 hover:underline">Política de Privacidade</a>.
+        </p>
       </div>
     </div>
   )
