@@ -269,9 +269,12 @@ export default function Privacidade() {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-between text-xs text-gray-500 px-2">
+        <div className="mt-6 flex items-center justify-between text-xs text-gray-500 px-2 flex-wrap gap-2">
           <Link to="/" className="hover:text-brand-600 hover:underline">← Voltar ao Compasso</Link>
-          <span>Versão 1.0 · 15/09/2026</span>
+          <div className="flex items-center gap-4">
+            <Link to="/termos" className="hover:text-brand-600 hover:underline">Termos de Uso</Link>
+            <span>Versão 1.0 · 15/09/2026</span>
+          </div>
         </div>
       </main>
     </div>

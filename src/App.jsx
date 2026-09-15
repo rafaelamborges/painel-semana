@@ -16,6 +16,7 @@ import Documentos from './pages/Documentos'
 import Join from './pages/Join'
 import Admin from './pages/Admin'
 import Privacidade from './pages/Privacidade'
+import Termos from './pages/Termos'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <FamilyProvider>
           <Routes>
             <Route path="/privacidade" element={<Privacidade />} />
+            <Route path="/termos" element={<Termos />} />
             <Route path="/login" element={<Login />} />
             <Route path="/onboarding" element={
               <RequireAuth><Onboarding /></RequireAuth>
