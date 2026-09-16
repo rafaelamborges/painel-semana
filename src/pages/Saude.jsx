@@ -53,22 +53,12 @@ export default function Saude() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Saúde</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{child?.name}</p>
-        </div>
+      <div className="mb-6">
+        <p className="rotulo mb-2">Histórico {child?.name ? `de ${child.name}` : ''}</p>
+        <h1 className="page-title">Saúde</h1>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard label="Vacinas em atraso" value={overdueVaccines.length} color="red" />
-        <StatCard label="Próximas vacinas" value={upcomingVaccines.length} color="amber" />
-        <StatCard label="Consultas registradas" value={consultations.length} color="green" />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
+      <div className="flex gap-7 mb-6 border-b border-linha overflow-x-auto">
         {[
           { id: 'vacinas', label: 'Vacinas' },
           { id: 'consultas', label: 'Consultas' },
@@ -76,21 +66,18 @@ export default function Saude() {
           { id: 'cartao', label: 'Cartão' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`aba ${tab === t.id ? 'aba-ativa' : ''}`}>
             {t.label}
           </button>
         ))}
       </div>
 
       {tab === 'vacinas' && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {upcomingVaccines.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-amber-600 mb-2 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                Próximas ({upcomingVaccines.length})
-              </h3>
-              <div className="space-y-2">
+              <p className="rotulo mb-3">Próximas ({upcomingVaccines.length})</p>
+              <div className="card-lista">
                 {upcomingVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="upcoming"
                     onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
@@ -102,11 +89,8 @@ export default function Saude() {
 
           {overdueVaccines.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-red-600 mb-2 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-                Em atraso ({overdueVaccines.length})
-              </h3>
-              <div className="space-y-2">
+              <p className="rotulo mb-3 text-alerta">Pendentes ({overdueVaccines.length})</p>
+              <div className="card-lista">
                 {overdueVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="overdue"
                     onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
@@ -117,11 +101,8 @@ export default function Saude() {
 
           {doneVaccines.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-green-600 mb-2 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                Aplicadas ({doneVaccines.length})
-              </h3>
-              <div className="space-y-2">
+              <p className="rotulo mb-3">Em dia ({doneVaccines.length})</p>
+              <div className="card-lista">
                 {doneVaccines.map(v => (
                   <VaccineRow key={v.id} vaccine={v} status="done" administeredRecord={administeredMap.get(v.id)} />
                 ))}
@@ -212,42 +193,23 @@ function StatCard({ label, value, color }) {
 }
 
 function VaccineRow({ vaccine, status, onAdminister, administeredRecord }) {
-  const daysUntil = differenceInDays(vaccine.scheduledDate, new Date())
+  const pill =
+    status === 'overdue'  ? { label: 'PENDENTE', cls: 'pill-urgente' } :
+    status === 'upcoming' ? { label: 'PRÓXIMA',  cls: 'pill-proximo' } :
+                            { label: 'EM DIA',   cls: 'pill-neutro' }
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-xl border ${
-      status === 'overdue' ? 'border-red-100 bg-red-50' :
-      status === 'upcoming' ? 'border-amber-100 bg-amber-50' :
-      'border-green-100 bg-green-50'
-    }`}>
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-        status === 'overdue' ? 'bg-red-400' : status === 'upcoming' ? 'bg-amber-400' : 'bg-green-400'
-      }`} />
+    <div className="linha-item">
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${status === 'done' ? 'text-green-700' : 'text-gray-800'}`}>
-          {vaccine.vaccine_name}
-        </p>
+        <p className="text-[15px] font-normal text-ink">{vaccine.vaccine_name}</p>
         {status === 'done' && administeredRecord?.administered_date ? (
-          <p className="text-xs text-green-600">
-            {vaccine.dose_label} · Aplicada em: {format(parseISO(administeredRecord.administered_date), 'dd/MM/yyyy')}
-          </p>
+          <p className="apoio">{vaccine.dose_label} · Aplicada em {format(parseISO(administeredRecord.administered_date), 'dd/MM/yyyy')}</p>
         ) : (
-          <p className="text-xs text-gray-500">
-            {vaccine.dose_label} · Prevista: {format(vaccine.scheduledDate, 'dd/MM/yyyy')}
-            {status === 'overdue' && <span className="text-red-500"> · {Math.abs(daysUntil)} dias atrás</span>}
-            {status === 'upcoming' && daysUntil <= 90 && <span className="text-amber-600"> · em {daysUntil} dias</span>}
-          </p>
+          <p className="apoio">{vaccine.dose_label} · Prevista para {format(vaccine.scheduledDate, 'dd/MM/yyyy')}</p>
         )}
       </div>
+      <span className={pill.cls}>{pill.label}</span>
       {(status === 'overdue' || status === 'upcoming') && onAdminister && (
-        <button onClick={onAdminister}
-          className="text-xs px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex-shrink-0">
-          Registrar
-        </button>
-      )}
-      {status === 'done' && (
-        <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-        </svg>
+        <button onClick={onAdminister} className="btn-texto ml-3">Registrar</button>
       )}
     </div>
   )
@@ -382,11 +344,11 @@ function ConsultationForm({ childId, onClose, onSaved }) {
 // ── Anotações ─────────────────────────────────────────────────────────
 
 const NOTE_CATEGORIES = [
-  { id: 'geral',   label: 'Geral',    emoji: '📝' },
-  { id: 'remedio', label: 'Remédios', emoji: '💊' },
-  { id: 'alergia', label: 'Alergias', emoji: '⚠️'  },
-  { id: 'medico',  label: 'Médicos',  emoji: '🩺' },
-  { id: 'exame',   label: 'Exames',   emoji: '🔬' },
+  { id: 'geral',   label: 'Geral'    },
+  { id: 'remedio', label: 'Remédios' },
+  { id: 'alergia', label: 'Alergias' },
+  { id: 'medico',  label: 'Médicos'  },
+  { id: 'exame',   label: 'Exames'   },
 ]
 
 const SEVERITY_CONFIG = {
@@ -456,7 +418,6 @@ function AnotacoesTab({ childId, familyId }) {
                 active ? 'bg-brand-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
-              <span>{cat.emoji}</span>
               {cat.label}
               {count > 0 && (
                 <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none font-semibold ${
@@ -489,8 +450,10 @@ function AnotacoesTab({ childId, familyId }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-14 bg-white rounded-2xl border border-gray-100">
-          <p className="text-3xl mb-3">{currentCat?.emoji}</p>
-          <p className="text-gray-500 font-medium">Nenhum registro em {currentCat?.label}</p>
+          <p className="rotulo mb-3">{currentCat?.label?.toUpperCase()}</p>
+          <p className="font-display leading-[1.1]" style={{ fontSize: '26px', fontWeight: 200 }}>
+            Nenhum <em className="italic font-semibold">registro</em> ainda.
+          </p>
           {permissions.canAdd && (
             <button onClick={() => setShowForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
               + Adicionar primeiro
@@ -569,7 +532,9 @@ function RemedioContent({ note }) {
   const d = note.data || {}
   return (
     <div className="flex items-start gap-3">
-      <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 text-lg">💊</div>
+      <div className="w-9 h-9 rounded-xl bg-bussola-wash flex items-center justify-center flex-shrink-0">
+        <div className="w-4 h-4 rounded-sm border-[1.8px] border-bussola" />
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="font-medium text-gray-800">{note.title}</p>
@@ -594,7 +559,7 @@ function AlergiaContent({ note }) {
   return (
     <div className={`-m-4 p-4 rounded-xl ${sev.bg} border ${sev.border}`}>
       <div className="flex items-center gap-2 justify-between flex-wrap">
-        <p className={`font-semibold ${sev.text} flex items-center gap-1.5`}>⚠️ {note.title}</p>
+        <p className={`font-semibold ${sev.text}`}>{note.title}</p>
         {d.severity && (
           <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${sev.badge}`}>{sev.label}</span>
         )}
@@ -609,7 +574,9 @@ function MedicoContent({ note }) {
   const d = note.data || {}
   return (
     <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center flex-shrink-0 text-lg">🩺</div>
+      <div className="w-10 h-10 rounded-full bg-bussola-wash flex items-center justify-center flex-shrink-0">
+        <div className="w-4 h-4 rounded-full border-[1.8px] border-bussola" />
+      </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-800">{note.title}</p>
         {d.specialty && <p className="text-xs text-brand-600 font-medium mt-0.5">{d.specialty}</p>}
@@ -698,7 +665,7 @@ function NoteForm({ category, childId, familyId, onClose, onSaved }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-            <span>{catConfig?.emoji}</span> Adicionar {catConfig?.label}
+Adicionar {catConfig?.label}
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

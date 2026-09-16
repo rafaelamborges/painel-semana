@@ -138,25 +138,14 @@ export default function Documentos() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Arquivos</h1>
-          {child && (
-            <p className="text-sm text-gray-500 mt-0.5">
-              {child.name} · {docs.length}/{MAX_DOCS}
-            </p>
-          )}
+          <p className="rotulo mb-2">O histórico da criança é dela</p>
+          <h1 className="page-title">Histórico</h1>
+          {child && <p className="apoio mt-2">{child.name} · {docs.length}/{MAX_DOCS} documentos</p>}
         </div>
         {!loading && docs.length < MAX_DOCS && permissions.canAdd && (
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Adicionar
-          </button>
+          <button onClick={() => setShowUpload(true)} className="btn-primario">Adicionar</button>
         )}
       </div>
 

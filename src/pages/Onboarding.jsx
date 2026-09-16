@@ -177,7 +177,7 @@ export default function Onboarding() {
                       setCoparentColor(role === 'mother' ? '#10b981' : '#3b82f6')
                     }}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${yourRole === role ? 'bg-brand-50 border-brand-400 text-brand-700' : 'border-gray-200 text-gray-600'}`}>
-                      {role === 'mother' ? '💙 Mãe' : '💚 Pai'}
+                      {role === 'mother' ? 'Guardião A' : 'Guardião B'}
                     </button>
                   ))}
                 </div>
@@ -224,7 +224,7 @@ export default function Onboarding() {
                   {['mother', 'father'].map(role => (
                     <button key={role} type="button" onClick={() => setReferenceGuardian(role)}
                       className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${referenceGuardian === role ? 'bg-brand-50 border-brand-400 text-brand-700' : 'border-gray-200 text-gray-600'}`}>
-                      {role === 'mother' ? '💙 Mãe' : '💚 Pai'}
+                      {role === 'mother' ? 'Guardião A' : 'Guardião B'}
                     </button>
                   ))}
                 </div>

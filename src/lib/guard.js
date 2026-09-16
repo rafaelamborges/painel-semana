@@ -102,11 +102,11 @@ export function getGuardForDateWithSwaps(date, pattern, swaps = []) {
 }
 
 export const GUARDIAN_LABELS = {
-  mother: 'Mamãe',
-  father: 'Papai',
+  mother: 'Guardião A',
+  father: 'Guardião B',
 }
 
 export const GUARDIAN_COLORS = {
-  mother: { bg: 'bg-mom', light: 'bg-mom-light', text: 'text-mom-dark', hex: '#3b82f6', lightHex: '#dbeafe' },
-  father: { bg: 'bg-dad', light: 'bg-dad-light', text: 'text-dad-dark', hex: '#10b981', lightHex: '#d1fae5' },
+  mother: { bg: 'bg-guardiaoA', light: 'bg-guardiaoA/16', text: 'text-guardiaoA', hex: '#5B8FF9', lightHex: 'rgba(91,143,249,0.16)' },
+  father: { bg: 'bg-guardiaoB', light: 'bg-guardiaoB/16', text: 'text-guardiaoB', hex: '#4DC9B8', lightHex: 'rgba(77,201,184,0.16)' },
 }

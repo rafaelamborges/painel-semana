@@ -109,37 +109,27 @@ export default function Guarda() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Rotina</h1>
-          {currentGuardColor && (
-            <p className="text-sm mt-0.5 font-medium" style={{ color: currentGuardColor.hex }}>
-              Esta semana: {guardianLabels[currentGuard]}
-            </p>
-          )}
+          <p className="rotulo mb-2">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</p>
+          <h1 className="page-title">Rotina de guarda</h1>
         </div>
         {(permissions.canEdit || permissions.canAdd) && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {permissions.canEdit && (
-              <button onClick={() => setShowManualForm(true)}
-                className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
-                Ajuste manual
-              </button>
+              <button onClick={() => setShowManualForm(true)} className="btn-secundario">Ajuste manual</button>
             )}
             {permissions.canAdd && (
-              <button onClick={() => setShowSwapForm(true)}
-                className="flex-1 sm:flex-none px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-                Solicitar troca
-              </button>
+              <button onClick={() => setShowSwapForm(true)} className="btn-primario">Propor troca</button>
             )}
           </div>
         )}
       </div>
 
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
+      <div className="flex gap-7 mb-6 border-b border-linha overflow-x-auto">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${tab === t.id ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`aba ${tab === t.id ? 'aba-ativa' : ''}`}>
             {t.label}
           </button>
         ))}
@@ -147,34 +137,35 @@ export default function Guarda() {
 
       {tab === 'calendar' && (
         <>
-          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+          <div className="flex flex-wrap items-center gap-5 mb-4">
+            <span className="text-[13px] font-light text-ink-mute">Guarda:</span>
             {['mother', 'father'].map(g => (
               <div key={g} className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded border" style={{ backgroundColor: guardianColors[g].lightHex, borderColor: guardianColors[g].hex }} />
-                <span className="text-gray-600">{guardianLabels[g]}</span>
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: guardianColors[g].lightHex, border: `1.5px solid ${guardianColors[g].hex}` }} />
+                <span className="text-[13px] font-light text-ink-body">{guardianLabels[g]}</span>
               </div>
             ))}
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: guardianColors['mother'].lightHex, outline: `2px solid ${guardianColors['mother'].hex}`, outlineOffset: '-2px' }} />
-              <span className="text-gray-600">Ajuste manual</span>
+              <div className="w-3 h-3 rounded-sm border-2 border-bussola bg-bussola-select" />
+              <span className="text-[13px] font-light text-ink-body">Ajuste manual</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <div className="bg-white rounded-card border border-linha overflow-hidden mb-6">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-linha">
+              <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="btn-icon" aria-label="Mês anterior">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <h2 className="font-semibold text-gray-800 capitalize">
-                {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+              <h2 className="section-title capitalize">
+                {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
               </h2>
-              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="btn-icon" aria-label="Próximo mês">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
-            <div className="grid grid-cols-7 border-b border-gray-100">
+            <div className="grid grid-cols-7 border-b border-linha">
               {WEEKDAYS.map(d => (
-                <div key={d} className="py-2 text-center text-xs font-medium text-gray-400">{d}</div>
+                <div key={d} className="py-3 text-center rotulo">{d}</div>
               ))}
             </div>
             <div className="grid grid-cols-7">
@@ -191,13 +182,13 @@ export default function Guarda() {
                     role={clickable ? 'button' : undefined}
                     tabIndex={clickable ? 0 : undefined}
                     onKeyDown={clickable ? (e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDayAction(day) } }) : undefined}
-                    className={`min-h-[48px] p-1.5 border-b border-r border-gray-50 ${!isCurrentMonth ? 'opacity-25' : ''} ${clickable ? 'cursor-pointer hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-inset' : ''}`}
+                    className={`min-h-[56px] sm:min-h-[84px] p-2.5 border-t border-r border-linha-suave ${!isCurrentMonth ? 'opacity-30' : ''} ${clickable ? 'cursor-pointer hover:bg-linha-suave/40 focus:outline-none focus:ring-2 focus:ring-bussola focus:ring-inset' : ''}`}
                     style={style}>
-                    <span className={`text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full ${isTodayDay ? 'bg-brand-600 text-white' : 'text-gray-700'}`}>
+                    <span className={`text-[13px] font-normal inline-flex w-[22px] h-[22px] items-center justify-center rounded-full ${isTodayDay ? 'bg-bussola text-white' : 'text-ink'}`}>
                       {format(day, 'd')}
                     </span>
                     {isTuesday && isCurrentMonth && (
-                      <div className="mt-0.5 text-[9px] text-gray-400 font-medium text-center">troca</div>
+                      <div className="mt-1.5 text-[11px] font-light text-ink-soft">troca 18h</div>
                     )}
                   </div>
                 )
@@ -205,16 +196,18 @@ export default function Guarda() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-800 mb-3">Semanas do mês</h3>
-            <div className="space-y-2">
+          <div className="card">
+            <p className="rotulo mb-4">Semanas do mês</p>
+            <div className="space-y-1">
               {weeklySummary.map((week, i) => {
                 const c = week.guardian ? guardianColors[week.guardian] : null
                 return (
-                  <div key={i} className="flex items-center gap-3 py-2 px-3 rounded-xl" style={c ? { backgroundColor: c.lightHex } : {}}>
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={c ? { backgroundColor: c.hex } : {}} />
-                    <span className="text-sm text-gray-600 flex-1">{format(week.start, 'dd/MM')} – {format(week.end, 'dd/MM')}</span>
-                    <span className="text-sm font-medium" style={c ? { color: c.hex } : {}}>{week.guardian ? guardianLabels[week.guardian] : '–'}</span>
+                  <div key={i} className="linha-item">
+                    <span className="ponto" style={c ? { backgroundColor: c.hex } : {}} />
+                    <span className="text-[15px] font-light text-ink-body flex-1">
+                      {format(week.start, 'dd/MM')} – {format(week.end, 'dd/MM')}
+                    </span>
+                    <span className="text-[15px] font-normal text-ink">{week.guardian ? guardianLabels[week.guardian] : '–'}</span>
                   </div>
                 )
               })}
@@ -1034,7 +1027,7 @@ function ManualOverrideForm({ familyId, members, onClose, onSaved }) {
               {['mother', 'father'].map(role => (
                 <button key={role} type="button" onClick={() => setGuardian(role)}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${guardian === role ? 'bg-brand-50 border-brand-400 text-brand-700' : 'border-gray-200 text-gray-600'}`}>
-                  {role === 'mother' ? '💙 Mãe' : '💚 Pai'}
+                  {role === 'mother' ? 'Guardião A' : 'Guardião B'}
                 </button>
               ))}
             </div>

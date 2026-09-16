@@ -67,62 +67,57 @@ export default function Lembretes() {
   const upcomingVaccines = vaccineAlerts.filter(v => v.status === 'scheduled').slice(0, 3)
 
   const allAlerts = [
-    // Therapy
     ...(therapyDays === null || therapyDays > 10 ? [{
       id: 'therapy',
       type: 'therapy',
       priority: therapyDays === null ? 'high' : therapyDays > 20 ? 'high' : 'medium',
-      icon: '🧠',
       title: 'Registro de terapia',
       description: therapyDays === null ? 'Nenhum registro ainda' : `Último registro há ${therapyDays} dias`,
+      origem: `Terapia · ${child?.name || 'criança'}`,
       link: '/terapia',
     }] : []),
 
-    // Overdue vaccines
     ...overdueVaccines.map(v => ({
       id: `vax_overdue_${v.id}`,
       type: 'vaccine_overdue',
       priority: 'high',
-      icon: '💉',
-      title: 'Vacina atrasada',
-      description: `${v.vaccine_name} – ${v.dose_label}`,
+      title: `${v.vaccine_name}, ${v.dose_label}: pendente.`,
+      description: `Prevista para ${format(v.scheduledDate, 'dd/MM/yyyy')}`,
+      origem: `Calendário PNI · ${child?.name || 'criança'}`,
       link: '/saude',
     })),
 
-    // Upcoming events
     ...events.slice(0, 3).map(ev => {
       const daysUntil = differenceInDays(parseISO(ev.start_at), today)
       return {
         id: `event_${ev.id}`,
         type: 'event',
         priority: daysUntil <= 3 ? 'high' : daysUntil <= 7 ? 'medium' : 'low',
-        icon: '📅',
         title: ev.title,
         description: `${format(parseISO(ev.start_at), "dd/MM 'às' HH:mm")}${ev.location ? ` · ${ev.location}` : ''}`,
+        origem: 'Agenda compartilhada',
         daysUntil,
         link: '/agenda',
       }
     }),
 
-    // Upcoming vaccines
     ...upcomingVaccines.map(v => ({
       id: `vax_upcoming_${v.id}`,
       type: 'vaccine',
       priority: differenceInDays(v.scheduledDate, today) <= 30 ? 'medium' : 'low',
-      icon: '💉',
-      title: `Vacina: ${v.vaccine_name}`,
+      title: `${v.vaccine_name} — próxima dose.`,
       description: `${v.dose_label} · Prevista para ${format(v.scheduledDate, 'dd/MM/yyyy')}`,
+      origem: `Calendário PNI · ${child?.name || 'criança'}`,
       link: '/saude',
     })),
 
-    // Consultation returns
     ...consultations.map(c => ({
       id: `consult_${c.id}`,
       type: 'consultation',
       priority: differenceInDays(new Date(c.next_return), today) <= 7 ? 'high' : 'medium',
-      icon: '🩺',
       title: `Retorno: ${c.specialty || 'Consulta'}`,
       description: format(new Date(c.next_return), "dd 'de' MMMM", { locale: ptBR }),
+      origem: 'Consulta registrada',
       link: '/saude',
     })),
   ]
@@ -133,68 +128,45 @@ export default function Lembretes() {
   })
 
   const priorityConfig = {
-    high: { bg: 'bg-red-50', border: 'border-red-100', dot: 'bg-red-400', label: 'Urgente' },
-    medium: { bg: 'bg-amber-50', border: 'border-amber-100', dot: 'bg-amber-400', label: 'Atenção' },
-    low: { bg: 'bg-blue-50', border: 'border-blue-100', dot: 'bg-blue-400', label: 'Info' },
+    high:   { label: 'URGENTE',      cls: 'pill-urgente' },
+    medium: { label: 'ATENÇÃO',      cls: 'pill-neutro' },
+    low:    { label: 'INFORMATIVO',  cls: 'pill-neutro' },
   }
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Alertas</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Central unificada de alertas</p>
-      </div>
-
-      {/* Summary badges */}
-      <div className="flex gap-3 mb-6">
-        {['high', 'medium', 'low'].map(p => {
-          const count = sortedAlerts.filter(a => a.priority === p).length
-          if (!count) return null
-          const cfg = priorityConfig[p]
-          return (
-            <div key={p} className={`px-3 py-2 rounded-xl border ${cfg.bg} ${cfg.border}`}>
-              <span className={`text-sm font-bold`}>{count}</span>
-              <span className="text-xs ml-1 opacity-70">{cfg.label}</span>
-            </div>
-          )
-        })}
+        <p className="rotulo mb-2">Central única</p>
+        <h1 className="page-title">Alertas</h1>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-bussola border-t-transparent rounded-full animate-spin" />
         </div>
       ) : sortedAlerts.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 py-8">
-          <EmptyState
-            art={<EmptyReminders />}
-            title="Tudo em dia!"
-            subtitle="Nenhum alerta no momento — aproveite o dia com tranquilidade."
-          />
+        <div className="card py-12 text-center">
+          <p className="display font-display text-[26px]" style={{ fontWeight: 200 }}>
+            Tudo <em className="italic font-semibold">em dia</em>.
+          </p>
+          <p className="corpo mt-3">Nenhum alerta no momento.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {sortedAlerts.map(alert => {
             const cfg = priorityConfig[alert.priority]
             return (
-              <a key={alert.id} href={alert.link}
-                className={`flex items-start gap-3 p-4 rounded-xl border transition-opacity hover:opacity-80 ${cfg.bg} ${cfg.border}`}>
-                <span className="text-xl flex-shrink-0">{alert.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-800 text-sm">{alert.title}</p>
-                  <p className="text-xs text-gray-600 mt-0.5">{alert.description}</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                  <span className="text-xs font-medium text-gray-500">{cfg.label}</span>
-                </div>
+              <a key={alert.id} href={alert.link} className="card-link block">
+                <p className={`${cfg.cls} mb-3`}>{cfg.label}</p>
+                <p className="text-[16px] font-light leading-snug text-ink-body">{alert.title}</p>
+                {alert.description && <p className="apoio mt-2">{alert.description}</p>}
+                {alert.origem && <p className="apoio mt-1">{alert.origem}</p>}
               </a>
             )
           })}
         </div>
       )}
 
-      {/* Birthday reminder */}
       {child?.birth_date && (() => {
         const birth = new Date(child.birth_date)
         const thisYear = new Date()
@@ -203,15 +175,14 @@ export default function Lembretes() {
         const days = differenceInDays(nextBirthday, today)
         if (days > 30) return null
         return (
-          <div className="mt-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border border-pink-100 p-5 flex items-center gap-4">
-            <span className="text-3xl">🎂</span>
-            <div>
-              <p className="font-semibold text-gray-800">Aniversário de {child.name}!</p>
-              <p className="text-sm text-gray-600">
-                {days === 0 ? 'É hoje! Feliz aniversário!' : `Em ${days} dia${days !== 1 ? 's' : ''}`} ·{' '}
-                {format(nextBirthday, "dd 'de' MMMM", { locale: ptBR })}
-              </p>
-            </div>
+          <div className="mt-4 card-marca">
+            <p className="rotulo mb-3">Aniversário</p>
+            <p className="font-display leading-snug tracking-tight text-ink" style={{ fontSize: '24px', fontWeight: 200 }}>
+              {child.name}, <em className="italic font-semibold">{days === 0 ? 'é hoje' : `em ${days} ${days === 1 ? 'dia' : 'dias'}`}</em>.
+            </p>
+            <p className="corpo mt-2">
+              {format(nextBirthday, "dd 'de' MMMM", { locale: ptBR })}
+            </p>
           </div>
         )
       })()}

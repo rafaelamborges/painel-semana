@@ -4,125 +4,185 @@
 
 @layer base {
   :root {
-    --page-bg: #F4F6FD;
+    --page-bg: #F7F8FF;
     --surface: #FFFFFF;
-    --border: #E8EDF7;
+    --border:  #E9EBFB;
     --radius-card: 16px;
-    --radius-btn: 12px;
+    --radius-btn:  12px;
   }
 
   html { scroll-behavior: smooth; }
 
   body {
     @apply font-sans antialiased;
+    font-weight: 300;
     background-color: var(--page-bg);
-    color: theme('colors.slate.900');
+    color: theme('colors.ink.DEFAULT');
     font-feature-settings: 'liga' 1, 'kern' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4 { @apply font-semibold tracking-tight; }
+  h1, h2, h3, h4 { @apply font-sans font-medium tracking-tight; }
 
   input, textarea, select { @apply font-sans; }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.bussola.DEFAULT');
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
-  /* ── Cards ─────────────────────────────────────────── */
+  /* ── Superfície ─────────────────────────────────── */
   .card {
-    @apply bg-white rounded-2xl border shadow-card p-5;
-    border-color: var(--border);
+    @apply bg-white border border-linha rounded-card p-6;
   }
   .card-sm {
-    @apply bg-white rounded-xl border shadow-card p-4;
-    border-color: var(--border);
+    @apply bg-white border border-linha rounded-card p-4;
+  }
+  .card-lista {
+    @apply bg-white border border-linha rounded-card px-6 py-1.5;
+  }
+  .card-link {
+    @apply card transition-colors duration-150 hover:border-[#D9DCF7] cursor-pointer;
   }
   .card-interactive {
-    @apply card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer;
+    /* legado: mantido, mas remove translação/sombra que quebram o novo sistema */
+    @apply card-link;
+  }
+  .faixa {
+    @apply rounded-faixa bg-marca;
+    padding: clamp(24px, 4vw, 48px);
+  }
+  .card-marca {
+    @apply bg-nevoa rounded-card p-6;
   }
 
-  /* ── Buttons ─────────────────────────────────────── */
+  /* ── Botões ────────────────────────────────────── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2
-           rounded-xl text-sm font-medium
-           transition-all duration-150 select-none
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-btn text-[15px] font-normal
+           min-h-[48px] px-6 transition-colors duration-150 select-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bussola/40 focus-visible:ring-offset-2;
   }
-  .btn-primary {
-    @apply btn px-5 py-2.5
-           bg-brand-600 text-white shadow-sm
-           hover:bg-brand-700 active:bg-brand-800 active:scale-[0.98]
-           focus-visible:ring-brand-400;
+  .btn-primario, .btn-primary {
+    @apply btn bg-bussola text-white hover:bg-bussola-hover active:bg-bussola-press;
   }
-  .btn-secondary {
-    @apply btn px-5 py-2.5
-           bg-white text-slate-700 border shadow-sm
-           hover:bg-slate-50 hover:border-slate-300 active:bg-slate-100 active:scale-[0.98]
-           focus-visible:ring-slate-300;
-    border-color: var(--border);
+  .btn-secundario, .btn-secondary {
+    @apply btn bg-white text-ink border border-linha hover:border-[#D9DCF7];
+  }
+  .btn-texto {
+    @apply inline-flex items-center min-h-[44px] text-[13px] text-bussola hover:text-bussola-press cursor-pointer;
   }
   .btn-ghost {
-    @apply btn px-3 py-2 text-slate-500
-           hover:bg-slate-100 hover:text-slate-700 active:bg-slate-200
-           focus-visible:ring-slate-300;
+    @apply inline-flex items-center justify-center min-h-[44px] px-3 rounded-btn text-ink-soft
+           hover:bg-linha-suave hover:text-ink transition-colors;
   }
   .btn-danger {
-    @apply btn px-5 py-2.5
-           bg-red-50 text-red-600 border border-red-100 shadow-sm
-           hover:bg-red-100 active:scale-[0.98]
-           focus-visible:ring-red-300;
+    @apply btn bg-white text-alerta border border-alerta/30 hover:bg-alerta/5;
   }
   .btn-icon {
-    @apply btn p-2 rounded-xl text-slate-500
-           hover:bg-slate-100 hover:text-slate-700
-           focus-visible:ring-slate-300;
+    @apply inline-flex items-center justify-center w-11 h-11 rounded-btn text-ink-soft
+           hover:bg-linha-suave hover:text-ink transition-colors;
   }
 
-  /* ── Inputs ─────────────────────────────────────── */
+  /* ── Tipografia ───────────────────────────────── */
+  .rotulo {
+    @apply font-mono text-[11px] uppercase tracking-[0.1em] text-ink-mute;
+  }
+  .display {
+    @apply font-display tracking-[-0.03em] leading-[1.06];
+    font-weight: 200;
+  }
+  .display-canonico em {
+    @apply not-italic; /* base sem itálico, aplicamos manualmente */
+  }
+  .corpo {
+    @apply font-light text-[15px] leading-relaxed text-ink-body;
+  }
+  .apoio {
+    @apply font-light text-[13px] leading-snug text-ink-mute;
+  }
+
+  .page-title {
+    @apply font-sans font-medium text-ink tracking-tight;
+    font-size: clamp(22px, 2.6vw, 30px);
+    line-height: 1.2;
+  }
+  .section-title {
+    @apply font-sans font-medium text-ink text-[18px] leading-tight;
+  }
+  .label-muted {
+    @apply text-[11px] font-mono uppercase tracking-[0.1em] text-ink-mute;
+  }
+  .body-sm {
+    @apply text-[13px] font-light text-ink-body;
+  }
+
+  /* ── Inputs ───────────────────────────────────── */
   .input {
-    @apply w-full px-4 py-3 rounded-xl text-sm text-slate-900
-           bg-white border placeholder:text-slate-400
-           transition-all duration-150
-           focus:outline-none focus:ring-2 focus:ring-brand-400/40 focus:border-brand-400;
-    border-color: var(--border);
+    @apply w-full min-h-[48px] px-4 rounded-btn bg-white border border-linha text-[15px] text-ink
+           placeholder:text-ink-mute
+           transition-colors duration-150
+           focus:outline-none focus:border-bussola focus:ring-2 focus:ring-bussola/30;
   }
   .input-label {
-    @apply block text-xs font-medium text-slate-500 mb-1.5;
+    @apply block text-[11px] font-mono uppercase tracking-[0.1em] text-ink-mute mb-1.5;
   }
   .select {
     @apply input appearance-none bg-no-repeat;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239896B0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-position: right 14px center;
     padding-right: 38px;
   }
 
-  /* ── Badges ─────────────────────────────────────── */
+  /* ── Pílulas de estado ─────────────────────────── */
+  .pill-estado {
+    @apply inline-flex font-mono text-[11px] tracking-[0.08em] uppercase;
+  }
+  .pill-urgente   { @apply pill-estado text-alerta; }
+  .pill-proximo   { @apply pill-estado text-bussola; }
+  .pill-neutro    { @apply pill-estado text-ink-mute; }
+
+  /* Legado de badges — mantidos com cor nova para retro-compat */
   .badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-brand  { @apply badge bg-brand-50 text-brand-700; }
+  .badge-brand  { @apply badge bg-bussola-wash text-bussola-press; }
   .badge-green  { @apply badge bg-emerald-50 text-emerald-700; }
   .badge-amber  { @apply badge bg-amber-50 text-amber-700; }
-  .badge-red    { @apply badge bg-red-50 text-red-600; }
-  .badge-slate  { @apply badge bg-slate-100 text-slate-600; }
+  .badge-red    { @apply badge bg-alerta/10 text-alerta; }
+  .badge-slate  { @apply badge bg-linha-suave text-ink-soft; }
 
-  /* ── Typography helpers ────────────────────────── */
-  .page-title    { @apply text-2xl font-bold text-slate-900 tracking-tight; }
-  .section-title { @apply text-sm font-semibold text-slate-800; }
-  .label-muted   { @apply text-xs font-medium text-slate-500; }
-  .body-sm       { @apply text-sm text-slate-600; }
+  /* ── Estruturais ─────────────────────────────── */
+  .linha-item {
+    @apply flex items-center gap-3.5 py-4 border-b border-linha-suave last:border-0;
+  }
+  .ponto {
+    @apply w-2.5 h-2.5 rounded-full flex-none;
+  }
+  .divider { @apply border-t border-linha; }
 
-  /* ── Divider ─────────────────────────────────── */
-  .divider { @apply border-t; border-color: var(--border); }
+  /* ── Abas de texto ─────────────────────────────── */
+  .aba {
+    @apply pb-3.5 text-[15px] cursor-pointer border-b-2 border-transparent text-ink-mute
+           transition-colors duration-150;
+  }
+  .aba-ativa { @apply text-ink border-bussola; }
 
-  /* ── Nav item (sidebar) ───────────────────────── */
+  /* ── Nav (sidebar) ────────────────────────────── */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-           text-slate-600 transition-all duration-150
-           hover:bg-slate-100 hover:text-slate-900;
+    @apply flex items-center gap-3 px-3.5 min-h-[44px] rounded-btn text-[15px] font-normal
+           text-ink-soft transition-colors duration-150
+           hover:bg-bussola-wash hover:text-ink;
   }
   .nav-item-active {
-    @apply bg-brand-50 text-brand-700 font-semibold;
+    @apply bg-bussola-wash text-bussola font-medium;
+  }
+
+  /* ── Esqueleto ────────────────────────────────── */
+  .esqueleto {
+    @apply bg-linha-suave rounded-btn;
   }
 }
 
@@ -133,8 +193,8 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-  .safe-b  { padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .safe-t  { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
 
   .text-balance { text-wrap: balance; }
 }

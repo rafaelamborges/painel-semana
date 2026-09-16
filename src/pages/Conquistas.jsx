@@ -47,30 +47,23 @@ export default function Conquistas() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Conquistas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{achievements.length} conquistas de {child?.name}</p>
+          <p className="rotulo mb-2">Marcos {child?.name ? `de ${child.name}` : ''}</p>
+          <h1 className="page-title">Conquistas</h1>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nova conquista
-        </button>
+        <button onClick={() => setShowForm(true)} className="btn-primario">Nova conquista</button>
       </div>
 
-      {/* Category filter */}
       <div className="flex gap-2 mb-6 flex-wrap">
         <button onClick={() => setFilterCategory('all')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${filterCategory === 'all' ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+          className={`px-3.5 py-1.5 rounded-full text-[13px] font-normal transition-colors ${filterCategory === 'all' ? 'bg-profundo text-white' : 'bg-white border border-linha text-ink-body hover:border-[#D9DCF7]'}`}>
           Todas
         </button>
         {CATEGORIES.map(cat => (
           <button key={cat.id} onClick={() => setFilterCategory(cat.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${filterCategory === cat.id ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-            {cat.emoji} {cat.label}
+            className={`px-3.5 py-1.5 rounded-full text-[13px] font-normal transition-colors ${filterCategory === cat.id ? 'bg-profundo text-white' : 'bg-white border border-linha text-ink-body hover:border-[#D9DCF7]'}`}>
+            {cat.label}
           </button>
         ))}
       </div>
@@ -123,7 +116,7 @@ function AchievementCard({ achievement }) {
   return (
     <div className={`rounded-2xl border p-5 ${colorMap[cat?.color || 'blue']}`}>
       <div className="flex items-start gap-3 mb-3">
-        <span className="text-2xl">{cat?.emoji || '🏆'}</span>
+        <span className="rotulo">{(cat?.label || 'Marco').toUpperCase()}</span>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-gray-800">{achievement.title}</p>
           <p className="text-xs text-gray-400 mt-0.5">
@@ -204,7 +197,7 @@ function AchievementForm({ childId, onClose, onSaved }) {
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
             <button type="submit" disabled={saving} className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50">
-              {saving ? 'Salvando…' : '🏆 Registrar'}
+              {saving ? 'Salvando…' : 'Registrar'}
             </button>
           </div>
         </form>

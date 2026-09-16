@@ -32,16 +32,16 @@ export function FamilyProvider({ children }) {
     const motherMember = members.find(m => m.role === 'mother')
     const fatherMember = members.find(m => m.role === 'father')
     return {
-      mother: motherMember?.name || 'Mamãe',
-      father: fatherMember?.name || 'Papai',
+      mother: motherMember?.name || 'Guardião A',
+      father: fatherMember?.name || 'Guardião B',
     }
   }, [members])
 
   const guardianColors = useMemo(() => {
     const motherMember = members.find(m => m.role === 'mother')
     const fatherMember = members.find(m => m.role === 'father')
-    const motherHex = motherMember?.color || '#3b82f6'
-    const fatherHex = fatherMember?.color || '#10b981'
+    const motherHex = motherMember?.color || '#5B8FF9'
+    const fatherHex = fatherMember?.color || '#4DC9B8'
     return {
       mother: { hex: motherHex, lightHex: hexToRgba(motherHex) },
       father: { hex: fatherHex, lightHex: hexToRgba(fatherHex) },

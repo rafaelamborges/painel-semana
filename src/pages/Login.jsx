@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { HeroFamily, CompassMascot } from '../components/illustrations'
 
 export default function Login() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
@@ -46,33 +45,39 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 p-4">
-      <div className="w-full max-w-md">
-        {/* Hero + Logo */}
-        <div className="mb-6">
-          <HeroFamily className="w-full drop-shadow-sm" />
+    <div className="min-h-screen bg-marca flex items-center justify-center p-4 relative">
+      {/* Logo ancorado no canto */}
+      <div className="absolute top-6 left-6 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-full border-2 border-bussola flex items-center justify-center">
+          <div className="w-[10px] h-[10px] bg-bussola" style={{ transform: 'rotate(45deg)' }} />
         </div>
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-brand-700">Compasso</h1>
-          <p className="text-gray-500 mt-1 text-sm">Rotina, saúde e escola em harmonia entre as duas casas</p>
+        <span className="font-medium text-[17px] tracking-[-0.01em] text-ink">Compasso</span>
+      </div>
+
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <p className="rotulo mb-4">Bem-vindo</p>
+          <h1 className="font-display leading-[1.06] tracking-[-0.035em] text-ink" style={{ fontSize: 'clamp(30px,4.6vw,44px)', fontWeight: 200 }}>
+            Duas casas.<br />
+            <em className="italic font-semibold">Uma só criança.</em>
+          </h1>
         </div>
 
         {!isSupabaseConfigured && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
-            ⚠️ Variáveis de ambiente não encontradas. Configure <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> no Vercel e faça redeploy.
+          <div className="mb-4 bg-white border border-linha rounded-card p-4 text-[13px] text-ink-body">
+            Configure <code className="font-mono text-[12px] text-bussola">VITE_SUPABASE_URL</code> e <code className="font-mono text-[12px] text-bussola">VITE_SUPABASE_ANON_KEY</code> no Vercel e faça redeploy.
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+        <div className="bg-white rounded-card border border-linha p-7">
+          <h2 className="section-title mb-5">
             {mode === 'login' ? 'Entrar' : 'Criar conta'}
           </h2>
 
-          {/* Google */}
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 mb-4"
+            className="btn-secundario w-full mb-3 gap-3"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -84,11 +89,10 @@ export default function Login() {
           </button>
 
           <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
-            <div className="relative flex justify-center text-xs text-gray-400"><span className="bg-white px-2">ou com email</span></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-linha" /></div>
+            <div className="relative flex justify-center rotulo"><span className="bg-white px-3">ou com email</span></div>
           </div>
 
-          {/* Email form */}
           <form onSubmit={handleEmailAuth} className="space-y-3">
             <input
               type="email"
@@ -96,7 +100,7 @@ export default function Login() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="input"
             />
             <input
               type="password"
@@ -105,61 +109,37 @@ export default function Login() {
               onChange={e => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="input"
             />
 
-            {error && <p className="text-red-500 text-xs">{error}</p>}
-            {message && <p className="text-green-600 text-xs">{message}</p>}
+            {error && <p className="text-alerta text-[13px]">{error}</p>}
+            {message && <p className="text-bussola text-[13px]">{message}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
+              className="btn-primario w-full disabled:opacity-50"
             >
               {loading ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-400 mt-4">
+          <p className="text-center apoio mt-5">
             {mode === 'login' ? 'Não tem conta? ' : 'Já tem conta? '}
-            <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-brand-600 font-medium hover:underline">
+            <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-bussola font-normal hover:underline">
               {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
             </button>
           </p>
         </div>
 
-        <p className="text-center text-[11px] text-gray-400 mt-6">
+        <p className="text-center apoio mt-6">
           Ao entrar, você concorda com os nossos{' '}
-          <a href="/termos" className="text-brand-600 hover:underline">Termos de Uso</a>
+          <a href="/termos" className="text-bussola hover:underline">Termos de Uso</a>
           {' '}e com a{' '}
-          <a href="/privacidade" className="text-brand-600 hover:underline">Política de Privacidade</a>.
+          <a href="/privacidade" className="text-bussola hover:underline">Política de Privacidade</a>.
         </p>
       </div>
     </div>
   )
 }
 
-function DemoMode() {
-  const navigate = useNavigate()
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 p-4">
-      <div className="w-full max-w-md text-center">
-        <div className="inline-block mb-4">
-          <CompassMascot size={96} wave />
-        </div>
-        <h1 className="text-3xl font-bold text-brand-700 mb-2">Compasso</h1>
-        <p className="text-gray-500 text-sm mb-6">Configure as variáveis de ambiente do Supabase para ativar o login.</p>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-xs text-amber-800 mb-6 font-mono">
-          <p>VITE_SUPABASE_URL=https://…supabase.co</p>
-          <p>VITE_SUPABASE_ANON_KEY=eyJ…</p>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="px-6 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-        >
-          Explorar em modo demo
-        </button>
-      </div>
-    </div>
-  )
-}

@@ -4,43 +4,94 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Marca (fixas, do brand book)
+        nevoa:    '#ECEEFF',
+        aurora:   '#FFE8EE',
+        profundo: '#1E1B4B',
+        penumbra: '#9896B0',
+
+        // Bússola (marca, ação, acento)
+        bussola: {
+          DEFAULT: '#6B5CE7',
+          50:  '#F1EFFE',
+          100: '#E7E4FC',
+          200: '#D4CDF9',
+          300: '#B7ACF3',
+          400: '#9384EE',
+          500: '#6B5CE7',
+          600: '#5A4BD6',
+          700: '#4F43C4',
+          800: '#3E349A',
+          900: '#2A226D',
+          hover:  '#5A4BD6',
+          press:  '#4F43C4',
+          wash:   '#F1EFFE',
+          select: '#F4F2FE',
+        },
+
+        // Retrocompatibilidade — `brand.*` aponta para o mesmo espectro da Bússola
+        // para que classes existentes (`bg-brand-600`, `text-brand-700` etc.) continuem
+        // funcionando enquanto migramos.
         brand: {
-          50:  '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81',
+          DEFAULT: '#6B5CE7',
+          50:  '#F1EFFE',
+          100: '#E7E4FC',
+          200: '#D4CDF9',
+          300: '#B7ACF3',
+          400: '#9384EE',
+          500: '#6B5CE7',
+          600: '#5A4BD6',
+          700: '#4F43C4',
+          800: '#3E349A',
+          900: '#2A226D',
           950: '#1E1B4B',
         },
-        mom: {
-          light: '#dbeafe',
-          DEFAULT: '#3b82f6',
-          dark: '#1d4ed8',
+
+        // Guardião — só interface (período, autoria, filtro)
+        guardiaoA: { DEFAULT: '#5B8FF9', tint: 'rgba(91,143,249,0.16)' },
+        guardiaoB: { DEFAULT: '#4DC9B8', tint: 'rgba(77,201,184,0.16)' },
+
+        // Retrocompatibilidade — mom/dad apontando para os novos guardiões
+        mom: { light: 'rgba(91,143,249,0.16)', DEFAULT: '#5B8FF9', dark: '#3D6FE0' },
+        dad: { light: 'rgba(77,201,184,0.16)', DEFAULT: '#4DC9B8', dark: '#2FA895' },
+
+        // Interface derivada
+        ink: {
+          DEFAULT: '#1E1B4B',
+          body:    '#3C3966',
+          soft:    '#5A5780',
+          mute:    '#9896B0',
         },
-        dad: {
-          light: '#d1fae5',
-          DEFAULT: '#10b981',
-          dark: '#065f46',
+        page: '#F7F8FF',
+        linha: {
+          DEFAULT: '#E9EBFB',
+          suave:   '#F1F2FB',
         },
+        alerta: '#C2536E',
       },
+
       fontFamily: {
-        sans: ['Lexend', 'system-ui', 'sans-serif'],
+        display: ['Newsreader', 'Georgia', 'serif'],
+        sans:    ['Lexend', 'system-ui', 'sans-serif'],
+        mono:    ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
-      boxShadow: {
-        'card':       '0 1px 3px 0 rgba(16,24,60,0.04), 0 4px 16px 0 rgba(16,24,60,0.05)',
-        'card-hover': '0 4px 8px -1px rgba(16,24,60,0.06), 0 12px 28px -3px rgba(16,24,60,0.09)',
-        'nav':        '0 -1px 0 0 rgba(16,24,60,0.06), 0 -4px 16px 0 rgba(16,24,60,0.03)',
-        'modal':      '0 24px 64px -12px rgba(16,24,60,0.18)',
-      },
+
       borderRadius: {
-        '2.5xl': '20px',
-        '4xl':   '2rem',
+        card:  '16px',
+        btn:   '12px',
+        faixa: '20px',
       },
+
+      boxShadow: {
+        modal: '0 24px 64px -12px rgba(30,27,75,0.18)',
+      },
+
+      backgroundImage: {
+        marca:       'linear-gradient(145deg,#ECEEFF 0%,#F4EDF6 55%,#FFE8EE 100%)',
+        placeholder: 'repeating-linear-gradient(135deg,#ECEEFF 0 6px,#F7F8FF 6px 12px)',
+      },
+
+      spacing: { 18: '4.5rem' },
     },
   },
   plugins: [],

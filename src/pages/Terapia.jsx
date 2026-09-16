@@ -31,24 +31,18 @@ export default function Terapia() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Terapia & Desenvolvimento</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{child?.name}</p>
+          <p className="rotulo mb-2">Desenvolvimento {child?.name ? `de ${child.name}` : ''}</p>
+          <h1 className="page-title">Terapia</h1>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Novo registro
-        </button>
+        <button onClick={() => setShowForm(true)} className="btn-primario">Novo registro</button>
       </div>
 
       {/* Alert banner */}
       {needsAlert && (
         <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <span className="text-xl">⚠️</span>
+          <span className="w-2 h-2 rounded-full bg-alerta mt-2 flex-shrink-0" />
           <div>
             <p className="font-medium text-amber-800">
               {daysSinceLast === null ? 'Nenhum registro ainda' : `${daysSinceLast} dias sem registro`}
