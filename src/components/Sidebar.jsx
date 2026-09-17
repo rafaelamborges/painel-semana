@@ -9,6 +9,7 @@ const navItems = [
   { to: '/',          label: 'Início',    icon: IconInicio,    exact: true },
   { to: '/guarda',    label: 'Rotina',    icon: IconRotina },
   { to: '/agenda',    label: 'Agenda',    icon: IconAgenda },
+  { to: '/bolsa',     label: 'Bolsa',     icon: IconBolsa },
   { to: '/saude',     label: 'Saúde',     icon: IconSaude },
   { to: '/documentos',label: 'Histórico', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
@@ -186,6 +187,15 @@ function IconAlertas({ className }) {
         className="w-[80%] h-[80%] border-[1.8px] border-current"
         style={{ borderRadius: '5px 5px 2px 2px' }}
       />
+    </div>
+  )
+}
+function IconBolsa({ className }) {
+  return (
+    <div className={`${className} flex items-end justify-center`}>
+      <div className="w-full h-[80%] border-[1.8px] border-current rounded-b-[3px] rounded-t-[6px] relative">
+        <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 w-[45%] h-[35%] border-[1.8px] border-current border-b-0 rounded-t-full" />
+      </div>
     </div>
   )
 }

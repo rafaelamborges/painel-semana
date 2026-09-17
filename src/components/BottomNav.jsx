@@ -4,8 +4,8 @@ const navItems = [
   { to: '/',           label: 'Início',    icon: IconInicio, exact: true },
   { to: '/guarda',     label: 'Rotina',    icon: IconRotina },
   { to: '/agenda',     label: 'Agenda',    icon: IconAgenda },
+  { to: '/bolsa',      label: 'Bolsa',     icon: IconBolsa },
   { to: '/saude',      label: 'Saúde',     icon: IconSaude },
-  { to: '/documentos', label: 'Histórico', icon: IconHistorico },
 ]
 
 export default function BottomNav() {
@@ -57,12 +57,12 @@ function IconSaude({ className }) {
     </div>
   )
 }
-function IconHistorico({ className }) {
+function IconBolsa({ className }) {
   return (
-    <div className={`${className} flex flex-col justify-center gap-[3px]`}>
-      <div className="h-[1.8px] w-full bg-current" />
-      <div className="h-[1.8px] w-[70%] bg-current" />
-      <div className="h-[1.8px] w-[90%] bg-current" />
+    <div className={`${className} flex items-end justify-center`}>
+      <div className="w-full h-[80%] border-[1.8px] border-current rounded-b-[3px] rounded-t-[6px] relative">
+        <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 w-[45%] h-[35%] border-[1.8px] border-current border-b-0 rounded-t-full" />
+      </div>
     </div>
   )
 }

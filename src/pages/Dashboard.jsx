@@ -6,7 +6,7 @@ import { format, isToday, isTomorrow, differenceInDays, parseISO,
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, getGuardWeekStart } from '../lib/guard'
+import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
 import { getVaccineAlerts } from '../lib/pni'
 
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
@@ -120,6 +120,19 @@ export default function Dashboard() {
           <Link to="/saude" className="btn-secundario">Registrar consulta</Link>
         </div>
       </div>
+
+      {/* Aviso da bolsa: véspera ou dia da troca */}
+      {guardPattern && (isDayBeforeSwap(today, guardPattern) || isSwapDay(today, guardPattern)) && child && (
+        <Link to="/bolsa" className="card-link block">
+          <p className="rotulo mb-2">Bolsa de {child.name}</p>
+          <p className="font-display leading-snug tracking-tight text-ink" style={{ fontSize: '22px', fontWeight: 200 }}>
+            {isSwapDay(today, guardPattern)
+              ? <>Hoje é <em className="italic font-semibold">dia de troca</em>. Que tal revisar a bolsa?</>
+              : <>Amanhã é <em className="italic font-semibold">dia de troca</em>. Que tal deixar a bolsa pronta?</>}
+          </p>
+          <span className="btn-texto mt-3">Preparar bolsa →</span>
+        </Link>
+      )}
 
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
         {/* Coluna 1 — Período atual */}

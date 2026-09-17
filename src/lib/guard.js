@@ -19,6 +19,40 @@ export function getGuardWeekStart(date, switchDay = 2) {
 }
 
 /**
+ * Próxima data de troca a partir de `from` (inclusive). Se `from` já é o
+ * dia da troca, retorna `from`. Caso contrário, retorna a próxima data
+ * que cai no `switch_day` do padrão.
+ */
+export function getNextSwapDate(from, pattern) {
+  const switchDay = pattern?.switch_day ?? 2
+  const d = new Date(from)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  const diff = (switchDay - day + 7) % 7
+  d.setDate(d.getDate() + diff)
+  return d
+}
+
+/**
+ * true se `date` é véspera do dia da troca.
+ */
+export function isDayBeforeSwap(date, pattern) {
+  const switchDay = pattern?.switch_day ?? 2
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  return day === (switchDay + 6) % 7
+}
+
+/**
+ * true se `date` é o próprio dia da troca.
+ */
+export function isSwapDay(date, pattern) {
+  const switchDay = pattern?.switch_day ?? 2
+  return new Date(date).getDay() === switchDay
+}
+
+/**
  * Returns 'mother' | 'father' for any given date based on the guard pattern.
  *
  * @param {Date|string} date - The date to check

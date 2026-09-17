@@ -15,6 +15,7 @@ import Lembretes from './pages/Lembretes'
 import Documentos from './pages/Documentos'
 import Join from './pages/Join'
 import Admin from './pages/Admin'
+import Bolsa from './pages/Bolsa'
 import Privacidade from './pages/Privacidade'
 import Termos from './pages/Termos'
 
@@ -46,6 +47,7 @@ export default function App() {
               <Route path="lembretes" element={<Lembretes />} />
               <Route path="documentos" element={<Documentos />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="bolsa" element={<Bolsa />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
