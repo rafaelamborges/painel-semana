@@ -64,10 +64,7 @@ export default function Privacidade() {
             <section id="quem-somos">
               <h2 className="text-xl font-bold text-gray-900 mb-3">1. Quem somos</h2>
               <p>
-                O Compasso é operado por <strong>Rafaela Borges</strong>, como pessoa física, no domínio <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>. Para fins da LGPD, Rafaela Borges figura como <strong>Controladora</strong> dos dados pessoais tratados no aplicativo.
-              </p>
-              <p>
-                Contato: <a href="mailto:rafaelamborges@gmail.com" className="text-brand-600 hover:underline">rafaelamborges@gmail.com</a>.
+                O Compasso é operado no domínio <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>. A pessoa responsável pelo tratamento de dados pessoais — a <strong>Controladora</strong>, para fins da LGPD — é identificada na seção 14 desta política.
               </p>
             </section>
 
@@ -178,7 +175,7 @@ export default function Privacidade() {
                 Seus dados são mantidos enquanto sua conta estiver ativa. Ao solicitar a exclusão da conta, os dados são apagados dos nossos sistemas em até <strong>30 dias</strong>, exceto quando houver obrigação legal de retenção maior. Cópias em backups seguros são sobrescritas em até 90 dias após a exclusão.
               </p>
               <p className="mt-2">
-                Para solicitar exclusão, escreva para o email da seção 14.
+                Para solicitar exclusão, entre em contato pelo canal informado na seção 14.
               </p>
             </section>
 
@@ -198,7 +195,7 @@ export default function Privacidade() {
                 <li>Peticionar diretamente à <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong>.</li>
               </ul>
               <p className="mt-3">
-                Para exercer qualquer desses direitos, escreva para o email da seção 14. Respondemos em até 15 dias corridos.
+                Para exercer qualquer desses direitos, entre em contato pelo canal informado na seção 14. Respondemos em até 15 dias corridos.
               </p>
             </section>
 
@@ -255,12 +252,9 @@ export default function Privacidade() {
 
             <section id="contato">
               <h2 className="text-xl font-bold text-gray-900 mb-3">14. Encarregado (DPO) e contato</h2>
-              <p>Encarregado pelo tratamento de dados pessoais:</p>
-              <div className="mt-3 border border-gray-100 rounded-xl p-4 bg-gray-50/60">
-                <p><strong>Rafaela Borges</strong></p>
-                <p>Email: <a href="mailto:rafaelamborges@gmail.com" className="text-brand-600 hover:underline">rafaelamborges@gmail.com</a></p>
-                <p>Site: <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a></p>
-              </div>
+              <p>
+                As informações da Controladora e do Encarregado (DPO) pelo tratamento de dados pessoais serão informadas em breve nesta seção. Enquanto isso, o site oficial permanece em <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>.
+              </p>
               <p className="mt-4">
                 Você também pode entrar em contato com a <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong> em <a href="https://www.gov.br/anpd" className="text-brand-600 hover:underline" target="_blank" rel="noopener noreferrer">www.gov.br/anpd</a>.
               </p>

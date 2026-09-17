@@ -94,7 +94,7 @@ export default function Termos() {
                 <li>Você é responsável pelas informações que fornece no cadastro e pela sua veracidade.</li>
                 <li>Você é responsável por manter a confidencialidade da sua senha e por toda atividade praticada com a sua conta.</li>
                 <li>Ao usar o login com Google, você autoriza o Compasso a receber os dados básicos do seu perfil Google, na forma descrita na Política de Privacidade.</li>
-                <li>Se identificar acesso não autorizado à sua conta, comunique-nos imediatamente pelo email da seção 15.</li>
+                <li>Se identificar acesso não autorizado à sua conta, comunique-nos imediatamente pelo canal informado na seção 15.</li>
               </ul>
             </section>
 
@@ -151,7 +151,7 @@ export default function Termos() {
             <section id="propriedade">
               <h2 className="text-xl font-bold text-gray-900 mb-3">8. Propriedade intelectual</h2>
               <p>
-                O nome "Compasso", a marca, o mascote, o design da interface, as ilustrações, o código-fonte e o conteúdo produzido pela Controladora são de titularidade de <strong>Rafaela Borges</strong> e estão protegidos pela Lei de Direitos Autorais (Lei 9.610/1998) e pela Lei de Software (Lei 9.609/1998).
+                O nome "Compasso", a marca, o design da interface, o código-fonte e o conteúdo produzido pela Controladora estão protegidos pela Lei de Direitos Autorais (Lei 9.610/1998) e pela Lei de Software (Lei 9.609/1998).
               </p>
               <p className="mt-2">
                 Nada nestes Termos transfere a você qualquer direito sobre esses elementos além da licença de uso pessoal do aplicativo. O <strong>seu conteúdo</strong> (dados que você registra) segue sendo seu, conforme já descrito na seção 5.
@@ -178,7 +178,7 @@ export default function Termos() {
             <section id="suspensao">
               <h2 className="text-xl font-bold text-gray-900 mb-3">11. Suspensão e encerramento</h2>
               <p>
-                Você pode encerrar sua conta a qualquer momento, solicitando a exclusão pelo email da seção 15. A Controladora pode suspender ou encerrar contas em caso de descumprimento destes Termos, mediante aviso quando possível, especialmente nas hipóteses da seção 7.
+                Você pode encerrar sua conta a qualquer momento, solicitando a exclusão pelo canal informado na seção 15. A Controladora pode suspender ou encerrar contas em caso de descumprimento destes Termos, mediante aviso quando possível, especialmente nas hipóteses da seção 7.
               </p>
               <p className="mt-2">
                 A exclusão da conta segue a política de retenção descrita na seção 8 da <Link to="/privacidade" className="text-brand-600 hover:underline">Política de Privacidade</Link>.
@@ -218,9 +218,8 @@ export default function Termos() {
             <section id="contato">
               <h2 className="text-xl font-bold text-gray-900 mb-3">15. Contato</h2>
               <div className="mt-2 border border-gray-100 rounded-xl p-4 bg-gray-50/60">
-                <p><strong>Rafaela Borges</strong> — Controladora</p>
-                <p>Email: <a href="mailto:rafaelamborges@gmail.com" className="text-brand-600 hover:underline">rafaelamborges@gmail.com</a></p>
-                <p>Site: <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a></p>
+                <p>As informações da Controladora e do canal de contato serão publicadas nesta seção em breve.</p>
+                <p className="mt-2">Site: <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a></p>
               </div>
             </section>
 
