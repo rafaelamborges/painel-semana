@@ -122,11 +122,6 @@ export default function Emails() {
             />
           ))}
 
-          {/* Google integration note */}
-          <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 text-sm text-gray-600">
-            <p className="font-medium mb-1">🔗 Integração com Gmail</p>
-            <p className="text-xs text-gray-500">A integração completa com Gmail e Google Calendar está disponível configurando as credenciais da API do Google nas variáveis de ambiente.</p>
-          </div>
         </div>
       )}
 

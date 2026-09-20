@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
   isSameMonth, isToday, parseISO, isSameDay, addMonths, subMonths } from 'date-fns'
-import { createGoogleCalendarEvent } from '../lib/googleCalendar'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -225,7 +224,6 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
   const [location, setLocation] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [googleSynced, setGoogleSynced] = useState(false)
 
   const dateStr = format(date, 'yyyy-MM-dd')
   const autoGuard = guardPattern ? getGuardForDate(date, guardPattern) : null
@@ -255,17 +253,6 @@ function EventForm({ date, familyId, childId, guardPattern, onClose, onSaved }) 
         .single()
 
       if (dbError) throw dbError
-
-      // Sync to Google Calendar using provider token
-      const { data: { session } } = await supabase.auth.getSession()
-      const accessToken = session?.provider_token
-      if (accessToken && saved) {
-        const googleId = await createGoogleCalendarEvent(accessToken, { title, description, location, start_at: startAt, end_at: endAt })
-        if (googleId) {
-          await supabase.from('calendar_events').update({ google_event_id: googleId }).eq('id', saved.id)
-          setGoogleSynced(true)
-        }
-      }
 
       onSaved()
     } catch (err) {

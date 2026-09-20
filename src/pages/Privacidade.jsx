@@ -104,8 +104,7 @@ export default function Privacidade() {
 
               <h3 className="font-semibold text-gray-800 mt-4 mb-2">2.5. Dados obtidos do Google (quando você usa "Entrar com Google")</h3>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Nome, email e foto pública da sua conta Google — armazenados no seu perfil de conta do Compasso.</li>
-                <li>Token de acesso temporário do Google, com o escopo <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">https://www.googleapis.com/auth/calendar</code>, usado <strong>exclusivamente</strong> para criar eventos no seu próprio Google Calendar quando você registra um evento no Compasso. O token é mantido em memória durante sua sessão e não é revendido, exportado ou usado para outras finalidades.</li>
+                <li>Nome, email e foto pública da sua conta Google — armazenados no seu perfil de conta do Compasso e utilizados apenas para identificação dentro do aplicativo.</li>
               </ul>
 
               <h3 className="font-semibold text-gray-800 mt-4 mb-2">2.6. Dados que <em>não</em> coletamos</h3>
@@ -119,7 +118,6 @@ export default function Privacidade() {
               <ul className="list-disc pl-5 space-y-1">
                 <li><strong>Operar o serviço:</strong> mostrar rotina, agenda, saúde, arquivos, acordos e alertas — exclusivamente para os membros da sua família.</li>
                 <li><strong>Isolar dados por família:</strong> aplicar segurança em nível de linha (Row-Level Security) do Postgres para garantir que apenas membros autorizados da sua família consigam ver os dados dela.</li>
-                <li><strong>Sincronização com Google Calendar (opcional):</strong> quando você usa "Entrar com Google" e cria um evento no Compasso, o app pode criar esse mesmo evento no seu Google Calendar, para que ele apareça também no seu celular ou em outros calendários.</li>
                 <li><strong>Alertas dentro do app:</strong> avisos sobre vacinas atrasadas, retornos médicos próximos e ausência de registros de terapia. Nada é enviado por email ou push automático a terceiros.</li>
                 <li><strong>Segurança e integridade:</strong> prevenção de acesso indevido, auditoria mínima e proteção contra abuso do serviço.</li>
               </ul>
@@ -129,7 +127,7 @@ export default function Privacidade() {
               <h2 className="text-xl font-bold text-gray-900 mb-3">4. Bases legais do tratamento</h2>
               <p className="mb-2">Para cada finalidade, o Compasso se apoia em uma das seguintes bases legais previstas na LGPD (art. 7º e art. 11):</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Consentimento</strong> — para os dados sensíveis (saúde, terapia) e para a sincronização com o Google Calendar.</li>
+                <li><strong>Consentimento</strong> — para os dados sensíveis (saúde, terapia).</li>
                 <li><strong>Execução de contrato</strong> — para operar as funcionalidades do serviço que você contratou ao criar sua conta.</li>
                 <li><strong>Interesse legítimo</strong> — para segurança, integridade do serviço e prevenção de fraude.</li>
                 <li><strong>Proteção do menor</strong> (art. 14) — para os dados da criança, sempre com base no consentimento do responsável legal.</li>
@@ -144,7 +142,7 @@ export default function Privacidade() {
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Supabase Inc.</strong> — banco de dados Postgres, autenticação e armazenamento de arquivos. Servidores em us-east-2 (Estados Unidos). É onde ficam armazenados todos os dados do app.</li>
                 <li><strong>Vercel Inc.</strong> — hospedagem da aplicação web e CDN global. Não armazena dados de usuário além dos logs padrão de servidor.</li>
-                <li><strong>Google LLC</strong> — apenas quando você opta por "Entrar com Google": o Google fornece ao Compasso os seus dados básicos de perfil e um token temporário para operar o Google Calendar em seu nome, conforme descrito na seção 11.</li>
+                <li><strong>Google LLC</strong> — apenas quando você opta por "Entrar com Google", para autenticação. O Google fornece ao Compasso os seus dados básicos de perfil (nome, email e foto pública) para identificação dentro do aplicativo, conforme descrito na seção 11.</li>
               </ul>
               <p className="mt-3">
                 Os dados também poderão ser divulgados em cumprimento de obrigação legal, ordem judicial ou requisição de autoridade competente, sempre no limite do que for exigido.
@@ -212,11 +210,10 @@ export default function Privacidade() {
             <section id="google">
               <h2 className="text-xl font-bold text-gray-900 mb-3">11. Uso de dados obtidos do Google</h2>
               <p className="mb-3">
-                Quando você entra no Compasso usando o botão <em>Entrar com Google</em>, o Compasso recebe do Google:
+                Quando você entra no Compasso usando o botão <em>Entrar com Google</em>, o Compasso recebe do Google apenas os seguintes dados básicos, usados exclusivamente para identificação dentro do aplicativo:
               </p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Nome, email e foto pública da sua conta Google — para identificar você no app.</li>
-                <li>Um <strong>token de acesso temporário</strong> com o escopo <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">https://www.googleapis.com/auth/calendar</code>, usado apenas para criar novos eventos no seu próprio Google Calendar quando você cria um evento no Compasso.</li>
+                <li><strong>Nome, email e foto pública</strong> da sua conta Google.</li>
               </ul>
 
               <p className="mt-4 mb-2 font-semibold text-gray-900">Compromisso de Uso Limitado (Google Limited Use)</p>
@@ -224,11 +221,11 @@ export default function Privacidade() {
                 O uso e a transferência para qualquer outro aplicativo de informações recebidas das APIs do Google respeitarão a <a href="https://developers.google.com/terms/api-services-user-data-policy#limited_use_requirements" className="text-brand-600 hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, incluindo os requisitos de Uso Limitado ("Limited Use"). Em particular:
               </p>
               <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>Os dados obtidos do Google são usados <strong>somente</strong> para operar as funcionalidades voltadas ao usuário dentro do Compasso.</li>
-                <li>Os dados <strong>não são transferidos</strong> a terceiros, exceto quando for necessário para operar essas funcionalidades, cumprir a lei ou por decisão explícita do usuário.</li>
+                <li>Os dados obtidos do Google são usados <strong>somente</strong> para autenticar e identificar você dentro do Compasso.</li>
+                <li>Os dados <strong>não são transferidos</strong> a terceiros, exceto quando for necessário para operar o serviço, cumprir a lei ou por decisão explícita do usuário.</li>
                 <li>Os dados <strong>não são usados</strong> para publicidade, retargeting, venda, empréstimo ou análise de perfil.</li>
                 <li>Os dados <strong>não são lidos por humanos</strong>, exceto (a) com seu consentimento afirmativo, (b) para segurança (ex: investigação de abuso), (c) para cumprir obrigação legal ou (d) quando os dados estiverem agregados e completamente anonimizados.</li>
-                <li>O Compasso <strong>não lê nem lista</strong> eventos existentes no seu Google Calendar. O escopo é usado apenas para criar novos eventos originados no Compasso.</li>
+                <li>O Compasso <strong>não solicita nem utiliza</strong> escopos sensíveis do Google — não acessa Google Calendar, Gmail, Drive, Contatos, nem qualquer outra API além dos escopos básicos de identidade (<code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">openid</code>, <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">email</code>, <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">profile</code>).</li>
               </ul>
 
               <p className="mt-4">
