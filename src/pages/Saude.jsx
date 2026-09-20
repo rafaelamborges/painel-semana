@@ -222,7 +222,10 @@ function ConsultationCard({ consultation }) {
         <div>
           <p className="font-medium text-gray-800">{consultation.specialty || 'Consulta'}</p>
           {consultation.doctor_name && <p className="text-sm text-gray-500">Dr(a). {consultation.doctor_name}</p>}
-          <p className="text-xs text-gray-400 mt-0.5">{format(new Date(consultation.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {format(new Date(consultation.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {consultation.time && ` · ${consultation.time.slice(0, 5)}`}
+          </p>
         </div>
         {consultation.next_return && (
           <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg flex-shrink-0">
@@ -287,6 +290,7 @@ function VaccineForm({ vaccine, childId, onClose, onSaved }) {
 
 function ConsultationForm({ childId, onClose, onSaved }) {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [time, setTime] = useState('')
   const [doctor, setDoctor] = useState('')
   const [specialty, setSpecialty] = useState('')
   const [notes, setNotes] = useState('')
@@ -299,6 +303,7 @@ function ConsultationForm({ childId, onClose, onSaved }) {
     await supabase.from('health_consultations').insert({
       child_id: childId,
       date,
+      time: time || null,
       doctor_name: doctor || null,
       specialty: specialty || null,
       notes: notes || null,
@@ -313,10 +318,17 @@ function ConsultationForm({ childId, onClose, onSaved }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-gray-800 mb-4">Registrar consulta</h3>
         <form onSubmit={save} className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1 block">Data</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} required
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Data</label>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} required
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1 block">Horário</label>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="w-32 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            </div>
           </div>
           <input type="text" placeholder="Especialidade (Pediatria, Neurologia…)" value={specialty} onChange={e => setSpecialty(e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
