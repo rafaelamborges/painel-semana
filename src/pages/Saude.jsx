@@ -14,6 +14,7 @@ export default function Saude() {
   const [consultations, setConsultations] = useState([])
   const [administered, setAdministered] = useState([])
   const [showConsultationForm, setShowConsultationForm] = useState(false)
+  const [editingConsultation, setEditingConsultation] = useState(null)
   const [showVaccineForm, setShowVaccineForm] = useState(false)
   const [selectedVaccine, setSelectedVaccine] = useState(null)
 
@@ -143,7 +144,17 @@ export default function Saude() {
           ) : (
             <div className="space-y-3">
               {consultations.map(c => (
-                <ConsultationCard key={c.id} consultation={c} />
+                <ConsultationCard
+                  key={c.id}
+                  consultation={c}
+                  canEdit={permissions.canEdit || permissions.canAdd}
+                  canDelete={permissions.canDelete}
+                  onEdit={() => setEditingConsultation(c)}
+                  onDelete={async () => {
+                    await supabase.from('health_consultations').delete().eq('id', c.id)
+                    loadConsultations()
+                  }}
+                />
               ))}
             </div>
           )}
@@ -167,11 +178,12 @@ export default function Saude() {
         />
       )}
 
-      {showConsultationForm && (
+      {(showConsultationForm || editingConsultation) && (
         <ConsultationForm
           childId={child?.id}
-          onClose={() => setShowConsultationForm(false)}
-          onSaved={() => { setShowConsultationForm(false); loadConsultations() }}
+          consultation={editingConsultation}
+          onClose={() => { setShowConsultationForm(false); setEditingConsultation(null) }}
+          onSaved={() => { setShowConsultationForm(false); setEditingConsultation(null); loadConsultations() }}
         />
       )}
     </div>
@@ -215,11 +227,12 @@ function VaccineRow({ vaccine, status, onAdminister, administeredRecord }) {
   )
 }
 
-function ConsultationCard({ consultation }) {
+function ConsultationCard({ consultation, canEdit, canDelete, onEdit, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4">
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <p className="font-medium text-gray-800">{consultation.specialty || 'Consulta'}</p>
           {consultation.doctor_name && <p className="text-sm text-gray-500">Dr(a). {consultation.doctor_name}</p>}
           <p className="text-xs text-gray-400 mt-0.5">
@@ -234,6 +247,21 @@ function ConsultationCard({ consultation }) {
         )}
       </div>
       {consultation.notes && <p className="text-sm text-gray-600 mt-2 border-t border-gray-50 pt-2">{consultation.notes}</p>}
+      {(canEdit || canDelete) && (
+        <div className="flex justify-end gap-3 mt-3 pt-3 border-t border-gray-50">
+          {canEdit && !confirmDelete && (
+            <button onClick={onEdit} className="btn-texto">Editar</button>
+          )}
+          {canDelete && (confirmDelete ? (
+            <>
+              <button onClick={() => setConfirmDelete(false)} className="btn-texto text-ink-mute">Cancelar</button>
+              <button onClick={() => { setConfirmDelete(false); onDelete?.() }} className="btn-texto text-alerta">Confirmar remoção</button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)} className="btn-texto text-ink-mute hover:text-alerta">Remover</button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -288,27 +316,32 @@ function VaccineForm({ vaccine, childId, onClose, onSaved }) {
   )
 }
 
-function ConsultationForm({ childId, onClose, onSaved }) {
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [time, setTime] = useState('')
-  const [doctor, setDoctor] = useState('')
-  const [specialty, setSpecialty] = useState('')
-  const [notes, setNotes] = useState('')
-  const [nextReturn, setNextReturn] = useState('')
+function ConsultationForm({ childId, consultation, onClose, onSaved }) {
+  const isEdit = !!consultation
+  const [date, setDate] = useState(consultation?.date || format(new Date(), 'yyyy-MM-dd'))
+  const [time, setTime] = useState(consultation?.time?.slice(0, 5) || '')
+  const [doctor, setDoctor] = useState(consultation?.doctor_name || '')
+  const [specialty, setSpecialty] = useState(consultation?.specialty || '')
+  const [notes, setNotes] = useState(consultation?.notes || '')
+  const [nextReturn, setNextReturn] = useState(consultation?.next_return || '')
   const [saving, setSaving] = useState(false)
 
   async function save(e) {
     e.preventDefault()
     setSaving(true)
-    await supabase.from('health_consultations').insert({
-      child_id: childId,
+    const payload = {
       date,
       time: time || null,
       doctor_name: doctor || null,
       specialty: specialty || null,
       notes: notes || null,
       next_return: nextReturn || null,
-    })
+    }
+    if (isEdit) {
+      await supabase.from('health_consultations').update(payload).eq('id', consultation.id)
+    } else {
+      await supabase.from('health_consultations').insert({ child_id: childId, ...payload })
+    }
     setSaving(false)
     onSaved()
   }
@@ -316,7 +349,7 @@ function ConsultationForm({ childId, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="font-semibold text-gray-800 mb-4">Registrar consulta</h3>
+        <h3 className="font-semibold text-gray-800 mb-4">{isEdit ? 'Editar consulta' : 'Registrar consulta'}</h3>
         <form onSubmit={save} className="space-y-3">
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <div>
@@ -344,7 +377,7 @@ function ConsultationForm({ childId, onClose, onSaved }) {
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
             <button type="submit" disabled={saving} className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50">
-              {saving ? 'Salvando…' : 'Registrar'}
+              {saving ? 'Salvando…' : (isEdit ? 'Salvar' : 'Registrar')}
             </button>
           </div>
         </form>
