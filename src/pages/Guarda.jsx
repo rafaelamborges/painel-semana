@@ -126,10 +126,10 @@ export default function Guarda() {
         )}
       </div>
 
-      <div className="flex gap-7 mb-6 border-b border-linha overflow-x-auto">
+      <div className="flex gap-5 sm:gap-7 mb-6 border-b border-linha overflow-x-auto scrollbar-hide">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`aba ${tab === t.id ? 'aba-ativa' : ''}`}>
+            className={`aba whitespace-nowrap ${tab === t.id ? 'aba-ativa' : ''}`}>
             {t.label}
           </button>
         ))}

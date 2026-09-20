@@ -114,7 +114,7 @@ export default function Bolsa() {
         </div>
       )}
 
-      <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+      <div className="grid gap-5 sm:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
         <section className="min-w-0">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="section-title">Itens de sempre</h2>

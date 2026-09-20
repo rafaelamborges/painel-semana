@@ -36,13 +36,13 @@
 @layer components {
   /* ── Superfície ─────────────────────────────────── */
   .card {
-    @apply bg-white border border-linha rounded-card p-6;
+    @apply bg-white border border-linha rounded-card p-5 sm:p-6;
   }
   .card-sm {
     @apply bg-white border border-linha rounded-card p-4;
   }
   .card-lista {
-    @apply bg-white border border-linha rounded-card px-6 py-1.5;
+    @apply bg-white border border-linha rounded-card px-5 py-1.5 sm:px-6;
   }
   .card-link {
     @apply card transition-colors duration-150 hover:border-[#D9DCF7] cursor-pointer;
@@ -53,10 +53,10 @@
   }
   .faixa {
     @apply rounded-faixa bg-marca;
-    padding: clamp(24px, 4vw, 48px);
+    padding: clamp(20px, 4vw, 48px);
   }
   .card-marca {
-    @apply bg-nevoa rounded-card p-6;
+    @apply bg-nevoa rounded-card p-5 sm:p-6;
   }
 
   /* ── Botões ────────────────────────────────────── */

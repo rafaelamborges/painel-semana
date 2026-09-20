@@ -28,10 +28,10 @@ export default function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Topbar mobile — lockup + guardião + campainha */}
-        <header className="lg:hidden sticky top-0 z-10 bg-white border-b border-linha px-5 py-3.5 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 z-10 bg-white border-b border-linha px-4 py-3.5 flex items-center justify-between gap-3">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-shrink-0"
             aria-label="Abrir menu"
           >
             <div className="w-[22px] h-[22px] rounded-full border-2 border-bussola flex items-center justify-center">
@@ -40,21 +40,21 @@ export default function Layout() {
             <span className="font-medium text-[15px] tracking-[-0.01em] text-ink">Compasso</span>
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {guardColor && (
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: guardColor.hex }} />
-                <span className="text-[13px] font-normal text-ink-soft">{guardLabel}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: guardColor.hex }} />
+                <span className="text-[13px] font-normal text-ink-soft truncate max-w-[120px]">{guardLabel}</span>
               </div>
             )}
-            <NavLink to="/lembretes" className="p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Alertas">
+            <NavLink to="/lembretes" className="p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0" aria-label="Alertas">
               <div className="w-[18px] h-[18px] border-[1.8px] border-ink-soft flex items-center justify-center"
                 style={{ borderRadius: '5px 5px 2px 2px' }} />
             </NavLink>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5 pb-24 lg:p-11 lg:pb-11">
+        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 lg:p-11 lg:pb-11">
           <Outlet />
         </main>
 

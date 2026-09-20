@@ -508,7 +508,7 @@ function ConsultationForm({ childId, childName, familyId, consultation, onClose,
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-gray-800 mb-4">{isEdit ? 'Editar consulta' : 'Registrar consulta'}</h3>
         <form onSubmit={save} className="space-y-3">
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">Data</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} required
@@ -517,7 +517,7 @@ function ConsultationForm({ childId, childName, familyId, consultation, onClose,
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">Horário</label>
               <input type="time" value={time} onChange={e => setTime(e.target.value)}
-                className="w-32 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                className="w-full sm:w-32 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
             </div>
           </div>
           <input type="text" placeholder="Especialidade (Pediatria, Neurologia…)" value={specialty} onChange={e => setSpecialty(e.target.value)}
@@ -548,7 +548,7 @@ function ConsultationForm({ childId, childName, familyId, consultation, onClose,
               </div>
             ) : (
               <button type="button" onClick={() => setAddToDoctors(true)}
-                className="w-full py-2.5 text-[13px] text-bussola hover:text-bussola-press rounded-xl border border-dashed border-bussola/40 hover:bg-bussola-wash/40 transition-colors">
+                className="w-full py-2.5 px-3 text-[13px] leading-tight text-bussola hover:text-bussola-press rounded-xl border border-dashed border-bussola/40 hover:bg-bussola-wash/40 transition-colors text-balance">
                 {addDoctorLabel}
               </button>
             )
