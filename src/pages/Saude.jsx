@@ -7,6 +7,13 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateVaccinationSchedule } from '../lib/pni'
 import { EmptyState, EmptyDoctor } from '../components/illustrations'
 
+function buildWhatsAppUrl(phone) {
+  const digits = (phone || '').replace(/\D/g, '')
+  // Se já começa com DDI (12+ dígitos), usa direto. Se tem 10-11 (BR sem +55), prepende 55.
+  const withCountry = digits.length >= 12 ? digits : `55${digits}`
+  return `https://wa.me/${withCountry}`
+}
+
 export default function Saude() {
   const { child, family, permissions } = useFamily()
   const [searchParams] = useSearchParams()
@@ -181,6 +188,7 @@ export default function Saude() {
       {(showConsultationForm || editingConsultation) && (
         <ConsultationForm
           childId={child?.id}
+          familyId={family?.id}
           consultation={editingConsultation}
           onClose={() => { setShowConsultationForm(false); setEditingConsultation(null) }}
           onSaved={() => { setShowConsultationForm(false); setEditingConsultation(null); loadConsultations() }}
@@ -316,7 +324,7 @@ function VaccineForm({ vaccine, childId, onClose, onSaved }) {
   )
 }
 
-function ConsultationForm({ childId, consultation, onClose, onSaved }) {
+function ConsultationForm({ childId, familyId, consultation, onClose, onSaved }) {
   const isEdit = !!consultation
   const [date, setDate] = useState(consultation?.date || format(new Date(), 'yyyy-MM-dd'))
   const [time, setTime] = useState(consultation?.time?.slice(0, 5) || '')
@@ -325,6 +333,25 @@ function ConsultationForm({ childId, consultation, onClose, onSaved }) {
   const [notes, setNotes] = useState(consultation?.notes || '')
   const [nextReturn, setNextReturn] = useState(consultation?.next_return || '')
   const [saving, setSaving] = useState(false)
+
+  const [addToDoctors, setAddToDoctors] = useState(false)
+  const [doctorPhone, setDoctorPhone] = useState('')
+  const [doctorClinic, setDoctorClinic] = useState('')
+  const [alreadyInList, setAlreadyInList] = useState(false)
+
+  // Verifica se médico já está na lista quando nome muda
+  useEffect(() => {
+    const name = doctor.trim()
+    if (!name || !childId) { setAlreadyInList(false); return }
+    let cancelled = false
+    supabase.from('health_notes')
+      .select('id', { count: 'exact', head: true })
+      .eq('child_id', childId)
+      .eq('category', 'medico')
+      .ilike('title', name)
+      .then(({ count }) => { if (!cancelled) setAlreadyInList((count || 0) > 0) })
+    return () => { cancelled = true }
+  }, [doctor, childId])
 
   async function save(e) {
     e.preventDefault()
@@ -342,13 +369,32 @@ function ConsultationForm({ childId, consultation, onClose, onSaved }) {
     } else {
       await supabase.from('health_consultations').insert({ child_id: childId, ...payload })
     }
+
+    // Também adiciona à lista de médicos se marcado
+    if (addToDoctors && !alreadyInList && doctor.trim() && familyId) {
+      await supabase.from('health_notes').insert({
+        family_id: familyId,
+        child_id: childId,
+        category: 'medico',
+        title: doctor.trim(),
+        content: null,
+        data: {
+          specialty: specialty || '',
+          phone: doctorPhone || '',
+          clinic: doctorClinic || '',
+        },
+      })
+    }
+
     setSaving(false)
     onSaved()
   }
 
+  const canAddDoctor = !isEdit && doctor.trim().length > 1 && !alreadyInList
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-gray-800 mb-4">{isEdit ? 'Editar consulta' : 'Registrar consulta'}</h3>
         <form onSubmit={save} className="space-y-3">
           <div className="grid grid-cols-[1fr_auto] gap-3">
@@ -367,6 +413,34 @@ function ConsultationForm({ childId, consultation, onClose, onSaved }) {
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
           <input type="text" placeholder="Nome do médico(a)" value={doctor} onChange={e => setDoctor(e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+
+          {alreadyInList && !isEdit && (
+            <p className="text-[12px] text-ink-mute -mt-1">Este médico já está na sua lista.</p>
+          )}
+
+          {canAddDoctor && (
+            addToDoctors ? (
+              <div className="rounded-xl border border-bussola/30 bg-bussola-wash/40 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[13px] font-medium text-ink">Adicionar à lista de médicos</p>
+                  <button type="button" onClick={() => setAddToDoctors(false)}
+                    className="text-[12px] text-ink-mute hover:text-ink">Cancelar</button>
+                </div>
+                <input type="tel" placeholder="Telefone (com DDD) — usado no WhatsApp"
+                  value={doctorPhone} onChange={e => setDoctorPhone(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                <input type="text" placeholder="Consultório (opcional)"
+                  value={doctorClinic} onChange={e => setDoctorClinic(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+              </div>
+            ) : (
+              <button type="button" onClick={() => setAddToDoctors(true)}
+                className="w-full py-2.5 text-[13px] text-bussola hover:text-bussola-press rounded-xl border border-dashed border-bussola/40 hover:bg-bussola-wash/40 transition-colors">
+                + Adicionar à lista de médicos
+              </button>
+            )
+          )}
+
           <textarea placeholder="Observações e recomendações" value={notes} onChange={e => setNotes(e.target.value)} rows={3}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
           <div>
@@ -627,16 +701,29 @@ function MedicoContent({ note }) {
         {d.specialty && <p className="text-xs text-brand-600 font-medium mt-0.5">{d.specialty}</p>}
         <div className="mt-1.5 space-y-1">
           {d.phone && (
-            <a
-              href={`tel:${d.phone.replace(/\D/g, '')}`}
-              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors w-fit"
-            >
-              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              {d.phone}
-            </a>
+            <div className="flex items-center gap-3 flex-wrap">
+              <a
+                href={`tel:${d.phone.replace(/\D/g, '')}`}
+                className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors w-fit"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {d.phone}
+              </a>
+              <a
+                href={buildWhatsAppUrl(d.phone)}
+                target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors w-fit"
+                aria-label="Falar por WhatsApp"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.92c0 2.1.55 4.15 1.6 5.96L2 22l4.24-1.11c1.75.95 3.72 1.46 5.72 1.46h.01c5.46 0 9.91-4.45 9.91-9.92 0-2.65-1.03-5.14-2.9-7.02A9.83 9.83 0 0012.04 2zm5.71 14.15c-.24.68-1.42 1.32-1.96 1.36-.53.04-1.03.23-3.46-.72-2.93-1.14-4.78-4.14-4.92-4.34-.15-.2-1.17-1.56-1.17-2.98 0-1.42.75-2.12 1.02-2.41.27-.29.59-.36.79-.36l.57.01c.18 0 .43-.07.67.51.24.6.82 2.06.9 2.21.07.15.12.32.02.52-.09.2-.14.32-.28.5-.14.17-.3.39-.42.52-.14.15-.29.31-.13.6.16.29.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.39.28.15.44.13.61-.08.16-.2.7-.82.89-1.1.19-.29.38-.24.63-.14.25.09 1.6.75 1.88.9.28.14.47.21.53.32.06.11.06.66-.17 1.34z" />
+                </svg>
+                WhatsApp
+              </a>
+            </div>
           )}
           {d.clinic && (
             <p className="text-xs text-gray-400 flex items-center gap-1">
