@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { format, parseISO, isPast, isFuture, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useSearchParams } from 'react-router-dom'
@@ -7,6 +7,34 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateVaccinationSchedule } from '../lib/pni'
 import { EmptyState, EmptyDoctor } from '../components/illustrations'
 
+const AREAS = [
+  { id: 'vacinas',   label: 'Vacinas',   icon: IconVacinas   },
+  { id: 'consultas', label: 'Consultas', icon: IconConsultas },
+  { id: 'cartao',    label: 'Cartão',    icon: IconCartao    },
+  { id: 'medicos',   label: 'Médicos',   icon: IconMedicos   },
+  { id: 'remedios',  label: 'Remédios',  icon: IconRemedios  },
+  { id: 'alergias',  label: 'Alergias',  icon: IconAlergias  },
+  { id: 'exames',    label: 'Exames',    icon: IconExames    },
+  { id: 'anotacoes', label: 'Anotações', icon: IconAnotacoes },
+]
+
+const NOTE_CATEGORY = {
+  medicos:   { key: 'medico',  label: 'Médicos'   },
+  remedios:  { key: 'remedio', label: 'Remédios'  },
+  alergias:  { key: 'alergia', label: 'Alergias'  },
+  exames:    { key: 'exame',   label: 'Exames'    },
+  anotacoes: { key: 'geral',   label: 'Anotações' },
+}
+
+function IconVacinas({ className })   { return <div className={`${className} relative flex items-center justify-center`}><div className="absolute w-full h-[1.8px] bg-current" /><div className="absolute h-full w-[1.8px] bg-current" /></div> }
+function IconConsultas({ className })  { return <div className={`${className} rounded-full border-[1.8px] border-current`} /> }
+function IconCartao({ className })     { return <div className={`${className} rounded-[3px] border-[1.8px] border-current`} /> }
+function IconMedicos({ className })    { return <div className={`${className} rounded-full border-[1.8px] border-current relative`}><div className="absolute inset-1 border-[1.8px] border-current rounded-full" /></div> }
+function IconRemedios({ className })   { return <div className={`${className} rounded-full border-[1.8px] border-current flex items-center justify-center`}><div className="w-[45%] h-[1.8px] bg-current" /></div> }
+function IconAlergias({ className })   { return <div className={`${className}`}><div className="w-full h-full border-[1.8px] border-current" style={{ borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)' }} /></div> }
+function IconExames({ className })     { return <div className={`${className} flex flex-col justify-center gap-[3px]`}><div className="h-[1.8px] w-full bg-current" /><div className="h-[1.8px] w-[65%] bg-current" /><div className="h-[1.8px] w-[85%] bg-current" /></div> }
+function IconAnotacoes({ className })  { return <div className={`${className} border-[1.8px] border-current rounded-sm relative`}><div className="absolute top-[25%] left-[20%] right-[35%] h-[1.8px] bg-current" /><div className="absolute top-[55%] left-[20%] right-[20%] h-[1.8px] bg-current" /></div> }
+
 function buildWhatsAppUrl(phone) {
   const digits = (phone || '').replace(/\D/g, '')
   // Se já começa com DDI (12+ dígitos), usa direto. Se tem 10-11 (BR sem +55), prepende 55.
@@ -14,12 +42,23 @@ function buildWhatsAppUrl(phone) {
   return `https://wa.me/${withCountry}`
 }
 
+// Mapeia deep-links antigos (tab=…) e novos (area=…) para o id de área
+function resolveInitialArea(params) {
+  const raw = (params.get('area') || params.get('tab') || '').toLowerCase()
+  if (!raw) return null
+  if (raw === 'notas') return 'anotacoes'
+  if (AREAS.some(a => a.id === raw)) return raw
+  return null
+}
+
 export default function Saude() {
   const { child, family, permissions } = useFamily()
-  const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState(searchParams.get('tab') || 'vacinas')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [area, setArea] = useState(() => resolveInitialArea(searchParams))
   const [consultations, setConsultations] = useState([])
   const [administered, setAdministered] = useState([])
+  const [notesCounts, setNotesCounts] = useState({})
+  const [cardPhotosCount, setCardPhotosCount] = useState(0)
   const [showConsultationForm, setShowConsultationForm] = useState(false)
   const [editingConsultation, setEditingConsultation] = useState(null)
   const [showVaccineForm, setShowVaccineForm] = useState(false)
@@ -31,7 +70,17 @@ export default function Saude() {
     if (!isSupabaseConfigured || !child) return
     loadConsultations()
     loadAdministered()
+    loadNotesCounts()
+    loadCardPhotosCount()
   }, [child])
+
+  function goArea(id) {
+    setArea(id)
+    const next = new URLSearchParams(searchParams)
+    if (id) next.set('area', id); else next.delete('area')
+    next.delete('tab')
+    setSearchParams(next, { replace: true })
+  }
 
   async function loadConsultations() {
     const { data } = await supabase
@@ -51,6 +100,23 @@ export default function Saude() {
     setAdministered(data || [])
   }
 
+  async function loadNotesCounts() {
+    const { data } = await supabase
+      .from('health_notes')
+      .select('category')
+      .eq('child_id', child.id)
+    const counts = {}
+    for (const row of (data || [])) counts[row.category] = (counts[row.category] || 0) + 1
+    setNotesCounts(counts)
+  }
+
+  async function loadCardPhotosCount() {
+    if (!family) return
+    const folder = `${family.id}/${child.id}`
+    const { data } = await supabase.storage.from('vaccination-cards').list(folder)
+    setCardPhotosCount((data || []).length)
+  }
+
   const administeredIds = new Set(administered.map(a => `${a.vaccine_id}_${a.dose_label}`))
   const administeredMap = new Map(administered.map(a => [`${a.vaccine_id}_${a.dose_label}`, a]))
 
@@ -59,28 +125,73 @@ export default function Saude() {
     .slice(0, 6)
   const doneVaccines = vaccinationSchedule.filter(v => administeredIds.has(v.id))
 
+  // Estados/contadores para os tiles
+  const tileMeta = useMemo(() => ({
+    vacinas:   overdueVaccines.length > 0
+      ? { label: `${overdueVaccines.length} pendente${overdueVaccines.length > 1 ? 's' : ''}`, tone: 'alerta' }
+      : upcomingVaccines.length > 0
+        ? { label: `${upcomingVaccines.length} próxima${upcomingVaccines.length > 1 ? 's' : ''}`, tone: 'muted' }
+        : { label: `${doneVaccines.length} em dia`, tone: 'muted' },
+    consultas: { label: consultations.length ? `${consultations.length} registro${consultations.length > 1 ? 's' : ''}` : 'Nenhum registro', tone: 'muted' },
+    cartao:    { label: cardPhotosCount ? `${cardPhotosCount} foto${cardPhotosCount > 1 ? 's' : ''}` : 'Nenhuma foto', tone: 'muted' },
+    medicos:   { label: notesCounts.medico  ? `${notesCounts.medico} cadastrado${notesCounts.medico > 1 ? 's' : ''}`   : 'Nenhum cadastrado',  tone: 'muted' },
+    remedios:  { label: notesCounts.remedio ? `${notesCounts.remedio} registro${notesCounts.remedio > 1 ? 's' : ''}`   : 'Nenhum registro',   tone: 'muted' },
+    alergias:  { label: notesCounts.alergia ? `${notesCounts.alergia} registrada${notesCounts.alergia > 1 ? 's' : ''}` : 'Nenhuma registrada',tone: 'muted' },
+    exames:    { label: notesCounts.exame   ? `${notesCounts.exame} registro${notesCounts.exame > 1 ? 's' : ''}`       : 'Nenhum registro',   tone: 'muted' },
+    anotacoes: { label: notesCounts.geral   ? `${notesCounts.geral} nota${notesCounts.geral > 1 ? 's' : ''}`           : 'Nenhuma nota',      tone: 'muted' },
+  }), [overdueVaccines.length, upcomingVaccines.length, doneVaccines.length, consultations.length, cardPhotosCount, notesCounts])
+
+  const currentArea = AREAS.find(a => a.id === area)
+
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <p className="rotulo mb-2">Histórico {child?.name ? `de ${child.name}` : ''}</p>
-        <h1 className="page-title">Saúde</h1>
-      </div>
-
-      <div className="flex gap-7 mb-6 border-b border-linha overflow-x-auto">
-        {[
-          { id: 'vacinas', label: 'Vacinas' },
-          { id: 'consultas', label: 'Consultas' },
-          { id: 'anotacoes', label: 'Anotações' },
-          { id: 'cartao', label: 'Cartão' },
-        ].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`aba ${tab === t.id ? 'aba-ativa' : ''}`}>
-            {t.label}
+      {/* Cabeçalho: home ou área */}
+      {!area ? (
+        <div className="mb-8">
+          <p className="rotulo mb-2">Cuidado {child?.name ? `de ${child.name}` : ''}</p>
+          <h1 className="page-title">Saúde</h1>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <button onClick={() => goArea(null)} className="btn-texto text-ink-mute hover:text-ink mb-1">
+            ← Saúde
           </button>
-        ))}
-      </div>
+          <div className="flex items-baseline justify-between flex-wrap gap-3">
+            <div>
+              <p className="rotulo mb-2">{tileMeta[area]?.label}</p>
+              <h1 className="page-title">{currentArea?.label}</h1>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {tab === 'vacinas' && (
+      {/* HOME — grid de tiles */}
+      {!area && (
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+          {AREAS.map(a => {
+            const meta = tileMeta[a.id] || {}
+            const Icon = a.icon
+            return (
+              <button
+                key={a.id}
+                onClick={() => goArea(a.id)}
+                className="card-link text-left min-h-[124px] flex flex-col justify-between group"
+              >
+                <div className="w-10 h-10 rounded-full bg-bussola-wash flex items-center justify-center text-bussola group-hover:bg-bussola/15 transition-colors">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[17px] font-medium text-ink leading-tight">{a.label}</p>
+                  <p className={`rotulo mt-1 ${meta.tone === 'alerta' ? 'text-alerta' : ''}`}>{meta.label}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Vacinas */}
+      {area === 'vacinas' && (
         <div className="space-y-6">
           {upcomingVaccines.length > 0 && (
             <div>
@@ -94,7 +205,6 @@ export default function Saude() {
               </div>
             </div>
           )}
-
           {overdueVaccines.length > 0 && (
             <div>
               <p className="rotulo mb-3 text-alerta">Pendentes ({overdueVaccines.length})</p>
@@ -106,7 +216,6 @@ export default function Saude() {
               </div>
             </div>
           )}
-
           {doneVaccines.length > 0 && (
             <div>
               <p className="rotulo mb-3">Em dia ({doneVaccines.length})</p>
@@ -120,33 +229,23 @@ export default function Saude() {
         </div>
       )}
 
-      {tab === 'consultas' && (
+      {/* Consultas */}
+      {area === 'consultas' && (
         <div>
           {permissions.canAdd && (
             <div className="flex justify-end mb-4">
-              <button onClick={() => setShowConsultationForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Nova consulta
-              </button>
+              <button onClick={() => setShowConsultationForm(true)} className="btn-primario">Nova consulta</button>
             </div>
           )}
-
           {consultations.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 py-8">
-              <EmptyState
-                art={<EmptyDoctor />}
-                title="Nenhuma consulta registrada"
-                subtitle="Registre consultas, retornos e observações do médico. Fica tudo acessível quando o cuidado passa de uma casa para outra."
-                action={permissions.canAdd && (
-                  <button onClick={() => setShowConsultationForm(true)}
-                    className="px-5 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors">
-                    Registrar consulta
-                  </button>
-                )}
-              />
+            <div className="card py-10 text-center">
+              <p className="font-display leading-[1.1]" style={{ fontSize: '26px', fontWeight: 200 }}>
+                Nenhuma <em className="italic font-semibold">consulta</em> ainda.
+              </p>
+              <p className="corpo mt-2">Registre consultas, retornos e observações do médico.</p>
+              {permissions.canAdd && (
+                <button onClick={() => setShowConsultationForm(true)} className="btn-primario mt-5">Registrar consulta</button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -168,12 +267,20 @@ export default function Saude() {
         </div>
       )}
 
-      {tab === 'anotacoes' && (
-        <AnotacoesTab childId={child?.id} familyId={family?.id} />
+      {/* Cartão */}
+      {area === 'cartao' && (
+        <VaccinationCardTab child={child} family={family} />
       )}
 
-      {tab === 'cartao' && (
-        <VaccinationCardTab child={child} family={family} />
+      {/* Categorias de notas: Médicos, Remédios, Alergias, Exames, Anotações */}
+      {area && NOTE_CATEGORY[area] && (
+        <NotesByCategoryTab
+          category={NOTE_CATEGORY[area].key}
+          areaLabel={NOTE_CATEGORY[area].label}
+          childId={child?.id}
+          familyId={family?.id}
+          onChange={loadNotesCounts}
+        />
       )}
 
       {showVaccineForm && selectedVaccine && (
@@ -191,7 +298,7 @@ export default function Saude() {
           familyId={family?.id}
           consultation={editingConsultation}
           onClose={() => { setShowConsultationForm(false); setEditingConsultation(null) }}
-          onSaved={() => { setShowConsultationForm(false); setEditingConsultation(null); loadConsultations() }}
+          onSaved={() => { setShowConsultationForm(false); setEditingConsultation(null); loadConsultations(); loadNotesCounts() }}
         />
       )}
     </div>
@@ -460,15 +567,7 @@ function ConsultationForm({ childId, familyId, consultation, onClose, onSaved })
   )
 }
 
-// ── Anotações ─────────────────────────────────────────────────────────
-
-const NOTE_CATEGORIES = [
-  { id: 'geral',   label: 'Geral'    },
-  { id: 'remedio', label: 'Remédios' },
-  { id: 'alergia', label: 'Alergias' },
-  { id: 'medico',  label: 'Médicos'  },
-  { id: 'exame',   label: 'Exames'   },
-]
+// ── Notas por categoria ───────────────────────────────────────────────
 
 const SEVERITY_CONFIG = {
   leve:     { label: 'Leve',     bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-700' },
@@ -478,9 +577,8 @@ const SEVERITY_CONFIG = {
 
 const IC = 'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300'
 
-function AnotacoesTab({ childId, familyId }) {
+function NotesByCategoryTab({ category, areaLabel, childId, familyId, onChange }) {
   const { permissions } = useFamily()
-  const [subTab, setSubTab] = useState('geral')
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -492,6 +590,7 @@ function AnotacoesTab({ childId, familyId }) {
       .from('health_notes')
       .select('*')
       .eq('child_id', childId)
+      .eq('category', category)
       .order('created_at', { ascending: false })
     if (error?.code === '42P01') {
       setSetupRequired(true)
@@ -501,10 +600,13 @@ function AnotacoesTab({ childId, familyId }) {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [childId])
+  useEffect(() => { load() }, [childId, category])
 
-  const filtered = notes.filter(n => n.category === subTab)
-  const currentCat = NOTE_CATEGORIES.find(c => c.id === subTab)
+  const addLabel = category === 'medico'  ? 'Adicionar médico'
+                 : category === 'remedio' ? 'Adicionar remédio'
+                 : category === 'alergia' ? 'Adicionar alergia'
+                 : category === 'exame'   ? 'Adicionar exame'
+                 : 'Nova nota'
 
   if (setupRequired) {
     return (
@@ -522,78 +624,46 @@ function AnotacoesTab({ childId, familyId }) {
     )
   }
 
+  const empty = !loading && notes.length === 0
+
+  function refresh() { load(); onChange?.() }
+
   return (
     <div>
-      {/* Sub-category pills */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {NOTE_CATEGORIES.map(cat => {
-          const count = notes.filter(n => n.category === cat.id).length
-          const active = subTab === cat.id
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setSubTab(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                active ? 'bg-brand-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              {cat.label}
-              {count > 0 && (
-                <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none font-semibold ${
-                  active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                }`}>{count}</span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Add button */}
-      {permissions.canAdd && (
+      {permissions.canAdd && !empty && (
         <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Adicionar {currentCat?.label}
-          </button>
+          <button onClick={() => setShowForm(true)} className="btn-primario">{addLabel}</button>
         </div>
       )}
 
       {loading ? (
         <div className="space-y-3">
-          {[1, 2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2].map(i => <div key={i} className="esqueleto h-20" />)}
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-14 bg-white rounded-2xl border border-gray-100">
-          <p className="rotulo mb-3">{currentCat?.label?.toUpperCase()}</p>
+      ) : empty ? (
+        <div className="card py-10 text-center">
           <p className="font-display leading-[1.1]" style={{ fontSize: '26px', fontWeight: 200 }}>
-            Nenhum <em className="italic font-semibold">registro</em> ainda.
+            Nenhum <em className="italic font-semibold">registro</em> ainda em {areaLabel}.
           </p>
           {permissions.canAdd && (
-            <button onClick={() => setShowForm(true)} className="mt-3 text-xs text-brand-600 hover:underline">
-              + Adicionar primeiro
-            </button>
+            <button onClick={() => setShowForm(true)} className="btn-primario mt-5">{addLabel}</button>
           )}
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map(note => (
-            <NoteCard key={note.id} note={note} onDeleted={load} />
+          {notes.map(note => (
+            <NoteCard key={note.id} note={note} onDeleted={refresh} />
           ))}
         </div>
       )}
 
       {showForm && (
         <NoteForm
-          category={subTab}
+          category={category}
           childId={childId}
           familyId={familyId}
           onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); load() }}
+          onSaved={() => { setShowForm(false); refresh() }}
         />
       )}
     </div>
