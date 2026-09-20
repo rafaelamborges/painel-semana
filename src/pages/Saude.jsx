@@ -295,6 +295,7 @@ export default function Saude() {
       {(showConsultationForm || editingConsultation) && (
         <ConsultationForm
           childId={child?.id}
+          childName={child?.name}
           familyId={family?.id}
           consultation={editingConsultation}
           onClose={() => { setShowConsultationForm(false); setEditingConsultation(null) }}
@@ -431,7 +432,7 @@ function VaccineForm({ vaccine, childId, onClose, onSaved }) {
   )
 }
 
-function ConsultationForm({ childId, familyId, consultation, onClose, onSaved }) {
+function ConsultationForm({ childId, childName, familyId, consultation, onClose, onSaved }) {
   const isEdit = !!consultation
   const [date, setDate] = useState(consultation?.date || format(new Date(), 'yyyy-MM-dd'))
   const [time, setTime] = useState(consultation?.time?.slice(0, 5) || '')
@@ -497,7 +498,10 @@ function ConsultationForm({ childId, familyId, consultation, onClose, onSaved })
     onSaved()
   }
 
-  const canAddDoctor = !isEdit && doctor.trim().length > 1 && !alreadyInList
+  const canAddDoctor = doctor.trim().length > 1 && !alreadyInList
+  const addDoctorLabel = childName
+    ? `+ Adicionar médico à lista de médicos de ${childName}`
+    : '+ Adicionar à lista de médicos'
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
@@ -521,17 +525,19 @@ function ConsultationForm({ childId, familyId, consultation, onClose, onSaved })
           <input type="text" placeholder="Nome do médico(a)" value={doctor} onChange={e => setDoctor(e.target.value)}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
 
-          {alreadyInList && !isEdit && (
-            <p className="text-[12px] text-ink-mute -mt-1">Este médico já está na sua lista.</p>
+          {alreadyInList && (
+            <p className="text-[12px] text-ink-mute -mt-1">Este médico já está na lista de médicos.</p>
           )}
 
           {canAddDoctor && (
             addToDoctors ? (
               <div className="rounded-xl border border-bussola/30 bg-bussola-wash/40 p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-[13px] font-medium text-ink">Adicionar à lista de médicos</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[13px] font-medium text-ink truncate">
+                    Adicionar à lista de médicos{childName ? ` de ${childName}` : ''}
+                  </p>
                   <button type="button" onClick={() => setAddToDoctors(false)}
-                    className="text-[12px] text-ink-mute hover:text-ink">Cancelar</button>
+                    className="text-[12px] text-ink-mute hover:text-ink flex-shrink-0">Cancelar</button>
                 </div>
                 <input type="tel" placeholder="Telefone (com DDD) — usado no WhatsApp"
                   value={doctorPhone} onChange={e => setDoctorPhone(e.target.value)}
@@ -543,7 +549,7 @@ function ConsultationForm({ childId, familyId, consultation, onClose, onSaved })
             ) : (
               <button type="button" onClick={() => setAddToDoctors(true)}
                 className="w-full py-2.5 text-[13px] text-bussola hover:text-bussola-press rounded-xl border border-dashed border-bussola/40 hover:bg-bussola-wash/40 transition-colors">
-                + Adicionar à lista de médicos
+                {addDoctorLabel}
               </button>
             )
           )}
