@@ -34,6 +34,7 @@ export default function Onboarding() {
   const [coparentColor, setCoparentColor] = useState('#10b981')
   const [referenceDate, setReferenceDate] = useState('2026-05-20')
   const [referenceGuardian, setReferenceGuardian] = useState('mother')
+  const [switchTime, setSwitchTime] = useState('08:00')
 
   async function handleFinish() {
     setError('')
@@ -75,6 +76,14 @@ export default function Onboarding() {
         .from('family_members')
         .update({ access_role: 'sysadmin' })
         .eq('id', myMemberId)
+
+      // Aplica o horário de troca escolhido no padrão recém-criado
+      if (switchTime) {
+        await supabase
+          .from('guard_patterns')
+          .update({ switch_time: switchTime })
+          .eq('child_id', childId)
+      }
 
       await reload()
       navigate('/')
@@ -217,6 +226,12 @@ export default function Onboarding() {
                 <label className="text-xs font-medium text-gray-500 mb-1 block">Data de referência (uma terça-feira)</label>
                 <input type="date" value={referenceDate} onChange={e => setReferenceDate(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">Horário da troca</label>
+                <input type="time" value={switchTime} onChange={e => setSwitchTime(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+                <p className="text-[11px] text-gray-400 mt-1">Padrão: 08:00. Você pode alterar em Rotina depois.</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 mb-1 block">Quem tem a guarda nessa semana de referência?</label>

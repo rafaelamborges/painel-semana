@@ -11,7 +11,7 @@ const navItems = [
   { to: '/agenda',    label: 'Agenda',    icon: IconAgenda },
   { to: '/bolsa',     label: 'Bolsa',     icon: IconBolsa },
   { to: '/saude',     label: 'Saúde',     icon: IconSaude },
-  { to: '/documentos',label: 'Histórico', icon: IconHistorico },
+  { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
   { to: '/lembretes', label: 'Alertas',   icon: IconAlertas, showCount: true },
 ]
