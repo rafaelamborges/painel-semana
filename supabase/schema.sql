@@ -265,3 +265,88 @@ create policy "shared_decisions_all" on shared_decisions
 create policy "email_filters_all" on email_filters
   using (family_id = get_my_family_id())
   with check (family_id = get_my_family_id());
+
+-- ─────────────────────────────────────────────────────────────
+-- Despesas (rateio entre coparentes)
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.expense_settings (
+  family_id uuid primary key references public.families(id) on delete cascade,
+  default_shares jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.expense_settings enable row level security;
+create policy "expense_settings_all" on public.expense_settings for all
+  using (family_id in (select family_id from public.family_members where user_id = auth.uid()))
+  with check (family_id in (select family_id from public.family_members where user_id = auth.uid()));
+
+create table if not exists public.expenses (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references public.families(id) on delete cascade,
+  child_id uuid references public.children(id) on delete set null,
+  created_by uuid references public.family_members(id) on delete set null,
+  title text not null,
+  amount_cents bigint not null check (amount_cents > 0),
+  date date not null,
+  category text not null default 'outros',
+  kind text not null default 'pontual' check (kind in ('pontual','fixa')),
+  recurrence text check (recurrence in ('mensal','anual')),
+  due_day int check (due_day between 1 and 31),
+  payer_id uuid references public.family_members(id) on delete set null,
+  shares jsonb,
+  receipt_path text,
+  notes text,
+  status text not null default 'aberta' check (status in ('aberta','quitada','arquivada')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+create index if not exists expenses_family_date_idx on public.expenses(family_id, date desc);
+create index if not exists expenses_kind_idx on public.expenses(family_id, kind);
+alter table public.expenses enable row level security;
+create policy "expenses_read" on public.expenses for select
+  using (family_id in (select family_id from public.family_members where user_id = auth.uid()));
+create policy "expenses_write" on public.expenses for insert
+  with check (family_id in (
+    select fm.family_id from public.family_members fm
+    where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','editor')
+  ));
+create policy "expenses_edit" on public.expenses for update
+  using (family_id in (
+    select fm.family_id from public.family_members fm
+    where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','editor')
+  ))
+  with check (family_id in (
+    select fm.family_id from public.family_members fm
+    where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','editor')
+  ));
+create policy "expenses_delete" on public.expenses for delete
+  using (family_id in (
+    select fm.family_id from public.family_members fm
+    where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','editor')
+  ));
+
+create table if not exists public.expense_settlements (
+  id uuid primary key default gen_random_uuid(),
+  expense_id uuid not null references public.expenses(id) on delete cascade,
+  member_id uuid not null references public.family_members(id) on delete cascade,
+  amount_cents bigint not null,
+  settled_at date not null default current_date,
+  notes text,
+  created_at timestamptz default now()
+);
+create index if not exists expense_settlements_expense_idx on public.expense_settlements(expense_id);
+alter table public.expense_settlements enable row level security;
+create policy "expense_settlements_all" on public.expense_settlements for all
+  using (expense_id in (
+    select e.id from public.expenses e
+    join public.family_members fm on fm.family_id = e.family_id
+    where fm.user_id = auth.uid()
+  ))
+  with check (expense_id in (
+    select e.id from public.expenses e
+    join public.family_members fm on fm.family_id = e.family_id
+    where fm.user_id = auth.uid()
+  ));
+
+-- Bucket privado + políticas (folder = family_id na raiz)
+-- insert into storage.buckets (id, name, public) values ('expense-receipts', 'expense-receipts', false);

@@ -48,17 +48,16 @@ export default function Despesas() {
   const monthEnd = endOfMonth(monthDate)
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !family) return
+    if (!isSupabaseConfigured || !family) { setLoading(false); return }
     load()
   }, [family])
 
   async function load() {
     setLoading(true)
+    // RLS já escopa expense_settlements pela família via expenses; select solto funciona.
     const [{ data: exps }, { data: setts }, { data: cfg }] = await Promise.all([
       supabase.from('expenses').select('*').eq('family_id', family.id).neq('status', 'arquivada').order('date', { ascending: false }),
-      supabase.from('expense_settlements').select('*').in('expense_id',
-        (await supabase.from('expenses').select('id').eq('family_id', family.id).neq('status','arquivada')).data?.map(e => e.id) || []
-      ),
+      supabase.from('expense_settlements').select('*'),
       supabase.from('expense_settings').select('*').eq('family_id', family.id).maybeSingle(),
     ])
     setExpenses(exps || [])
@@ -73,7 +72,14 @@ export default function Despesas() {
     return m
   }, [members])
 
-  const guardians = useMemo(() => members.filter(m => m.role === 'mother' || m.role === 'father'), [members])
+  // Ordem estável: mother antes de father, depois por id (evita saldo trocar de sinal entre sessões)
+  const guardians = useMemo(() => {
+    const rank = { mother: 0, father: 1 }
+    return members
+      .filter(m => m.role === 'mother' || m.role === 'father')
+      .slice()
+      .sort((a, b) => (rank[a.role] - rank[b.role]) || String(a.id).localeCompare(String(b.id)))
+  }, [members])
 
   const defaultShares = useMemo(() => {
     if (settings?.default_shares && Object.keys(settings.default_shares).length) return settings.default_shares
@@ -99,7 +105,11 @@ export default function Despesas() {
     listExpenses.reduce((s, e) => s + Number(e.amount_cents || 0), 0)
   , [listExpenses])
 
-  // Saldo entre guardiões (considerando todas as despesas abertas + acertos)
+  // Saldo entre os dois guardiões. Considera:
+  // - despesa paga por A ou B: outro guardião deve sua % pro pagador
+  // - despesa paga por terceiro (avó, babá, etc): ambos guardiões devem sua %,
+  //   mas isso não afeta o saldo A↔B (é uma dívida com o terceiro, não entre eles)
+  // - acertos entre A e B ajustam o net
   const saldo = useMemo(() => {
     if (guardians.length < 2) return null
     const [A, B] = guardians
@@ -115,17 +125,20 @@ export default function Despesas() {
       const amt = Number(e.amount_cents || 0)
       const shareA = Math.round(amt * (Number(shares[A.id]) || 0) / 100)
       const shareB = Math.round(amt * (Number(shares[B.id]) || 0) / 100)
+
       if (e.payer_id === A.id) {
-        net += shareB // B deve sua parte pra A
+        net += shareB
       } else if (e.payer_id === B.id) {
-        net -= shareA // A deve sua parte pra B
+        net -= shareA
       }
-      // acertos reduzem a dívida
+      // Se pagador é terceiro (avó, babá etc): não mexe no saldo A↔B.
+
       const setts = settByExpense.get(e.id) || []
       for (const s of setts) {
         const val = Number(s.amount_cents)
-        if (s.member_id === B.id) net -= val // B pagou pra A
-        else if (s.member_id === A.id) net += val // A pagou pra B
+        // Só acertos entre A e B afetam o saldo mútuo
+        if (e.payer_id === A.id && s.member_id === B.id) net -= val
+        else if (e.payer_id === B.id && s.member_id === A.id) net += val
       }
     }
     return { A, B, net }
@@ -242,11 +255,13 @@ export default function Despesas() {
               onEdit={() => { setEditing(e); setShowForm(true) }}
               onSettle={() => setSettleFor(e)}
               onDelete={async () => {
-                await supabase.from('expenses').delete().eq('id', e.id)
+                const { error } = await supabase.from('expenses').delete().eq('id', e.id)
+                if (error) { alert('Não foi possível excluir: ' + error.message); return }
                 load()
               }}
               onArchive={async () => {
-                await supabase.from('expenses').update({ status: 'arquivada' }).eq('id', e.id)
+                const { error } = await supabase.from('expenses').update({ status: 'arquivada' }).eq('id', e.id)
+                if (error) { alert('Não foi possível arquivar: ' + error.message); return }
                 load()
               }}
             />
@@ -325,11 +340,7 @@ function ExpenseCard({ expense, settlements, memberById, defaultShares, canEdit,
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-[18px] font-medium text-ink leading-none">{brl(expense.amount_cents)}</p>
-          {expense.receipt_url && (
-            <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-bussola mt-1 inline-block hover:underline">
-              Comprovante
-            </a>
-          )}
+          {expense.receipt_path && <ReceiptLink path={expense.receipt_path} />}
         </div>
       </div>
 
@@ -387,6 +398,23 @@ function ExpenseCard({ expense, settlements, memberById, defaultShares, canEdit,
   )
 }
 
+function ReceiptLink({ path }) {
+  const [loading, setLoading] = useState(false)
+  async function open(e) {
+    e.preventDefault()
+    setLoading(true)
+    const { data, error } = await supabase.storage.from('expense-receipts').createSignedUrl(path, 300)
+    setLoading(false)
+    if (error || !data?.signedUrl) return
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+  }
+  return (
+    <button onClick={open} disabled={loading} className="text-[11px] text-bussola mt-1 hover:underline disabled:opacity-50">
+      {loading ? 'Abrindo…' : 'Comprovante'}
+    </button>
+  )
+}
+
 function ExpenseForm({ expense, family, child, members, defaultShares, guardians, onClose, onSaved }) {
   const isEdit = !!expense
   const [title, setTitle] = useState(expense?.title || '')
@@ -402,7 +430,7 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
   const initialShares = expense?.shares || defaultShares
   const [shares, setShares] = useState(initialShares)
   const [receiptFile, setReceiptFile] = useState(null)
-  const [receiptUrl, setReceiptUrl] = useState(expense?.receipt_url || '')
+  const [receiptPath, setReceiptPath] = useState(expense?.receipt_path || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -424,7 +452,7 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
     if (!validShares) { setError('A soma dos percentuais precisa dar 100%.'); return }
     setSaving(true)
 
-    let finalReceiptUrl = receiptUrl
+    let finalReceiptPath = receiptPath
     if (receiptFile) {
       const ext = receiptFile.name.split('.').pop().toLowerCase()
       const path = `${family.id}/${crypto.randomUUID()}.${ext}`
@@ -432,8 +460,7 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
         .from('expense-receipts')
         .upload(path, receiptFile, { upsert: false })
       if (upErr) { setError('Erro ao enviar comprovante: ' + upErr.message); setSaving(false); return }
-      const { data: signed } = await supabase.storage.from('expense-receipts').createSignedUrl(path, 60 * 60 * 24 * 365)
-      finalReceiptUrl = signed?.signedUrl || ''
+      finalReceiptPath = path
     }
 
     const payload = {
@@ -448,7 +475,7 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
       due_day: kind === 'fixa' && recurrence === 'mensal' ? Number(dueDay) : null,
       payer_id: payerId || null,
       shares: customShares ? shares : null,
-      receipt_url: finalReceiptUrl || null,
+      receipt_path: finalReceiptPath || null,
       notes: notes.trim() || null,
     }
 
@@ -572,10 +599,8 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
           <label className="rotulo mb-1 block">Comprovante (opcional)</label>
           <input type="file" accept="image/*,application/pdf" onChange={e => setReceiptFile(e.target.files?.[0] || null)}
             className="text-sm" />
-          {receiptUrl && !receiptFile && (
-            <p className="text-[12px] text-ink-mute mt-1">
-              Já anexado · <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="text-bussola hover:underline">ver</a>
-            </p>
+          {receiptPath && !receiptFile && (
+            <p className="text-[12px] text-ink-mute mt-1">Já anexado (será mantido)</p>
           )}
         </div>
 
@@ -658,7 +683,7 @@ function SettingsForm({ family, settings, guardians, onClose, onSaved }) {
 
 function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
   const shares = expense.shares || defaultShares
-  const nonPayerIds = Object.keys(shares).filter(mid => mid !== expense.payer_id)
+  const nonPayerIds = Object.keys(shares).filter(mid => mid !== expense.payer_id && Number(shares[mid] || 0) > 0)
   const [memberId, setMemberId] = useState(nonPayerIds[0] || '')
   const [amount, setAmount] = useState('')
   const [settledAt, setSettledAt] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -667,10 +692,25 @@ function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (!memberId) return
     const pct = Number(shares[memberId] || 0)
     const expected = Math.round(Number(expense.amount_cents) * pct / 100)
     setAmount((expected / 100).toString().replace('.', ','))
-  }, [memberId])
+  }, [memberId, expense.amount_cents])
+
+  if (nonPayerIds.length === 0) {
+    return (
+      <Modal onClose={onClose} title="Registrar acerto">
+        <p className="text-sm text-ink-mute">
+          Esta despesa não tem outros membros com parte a acertar
+          {expense.payer_id ? ' (o pagador cobre 100%).' : '.'}
+        </p>
+        <div className="flex justify-end mt-4">
+          <button onClick={onClose} className="btn-secundario">Fechar</button>
+        </div>
+      </Modal>
+    )
+  }
 
   const parseAmount = () => {
     const raw = (amount || '').replace(/[^\d,]/g, '').replace(',', '.')
@@ -682,6 +722,7 @@ function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
     e.preventDefault()
     const cents = parseAmount()
     if (cents <= 0) { setError('Informe um valor válido.'); return }
+    if (!memberId) { setError('Selecione quem acertou.'); return }
     setSaving(true)
     setError('')
     const { error: err } = await supabase.from('expense_settlements').insert({
