@@ -10,6 +10,7 @@ const navItems = [
   { to: '/guarda',    label: 'Rotina',    icon: IconRotina },
   { to: '/agenda',    label: 'Agenda',    icon: IconAgenda },
   { to: '/bolsa',     label: 'Bolsa',     icon: IconBolsa },
+  { to: '/despesas',  label: 'Despesas',  icon: IconDespesas },
   { to: '/saude',     label: 'Saúde',     icon: IconSaude },
   { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
@@ -196,6 +197,16 @@ function IconBolsa({ className }) {
       <div className="w-full h-[80%] border-[1.8px] border-current rounded-b-[3px] rounded-t-[6px] relative">
         <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 w-[45%] h-[35%] border-[1.8px] border-current border-b-0 rounded-t-full" />
       </div>
+    </div>
+  )
+}
+function IconDespesas({ className }) {
+  return (
+    <div className={`${className} relative flex items-center justify-center`}>
+      <div className="absolute inset-0 rounded-full border-[1.8px] border-current" />
+      <div className="absolute top-[18%] bottom-[18%] left-1/2 w-[1.8px] bg-current" />
+      <div className="absolute top-[32%] w-[55%] h-[1.8px] bg-current" style={{ left: '22%' }} />
+      <div className="absolute bottom-[32%] w-[55%] h-[1.8px] bg-current" style={{ left: '22%' }} />
     </div>
   )
 }
