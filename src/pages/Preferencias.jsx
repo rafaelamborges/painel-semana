@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useFamily } from '../context/FamilyContext'
+import { useAuth } from '../context/AuthContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const KINDS = [
@@ -17,22 +18,19 @@ const KINDS = [
 
 export default function Preferencias() {
   const { members } = useFamily()
-  const [me, setMe] = useState(null)
+  const { user } = useAuth()
+  const me = members.find(m => m.user_id === user?.id) || null
   const [prefs, setPrefs] = useState(null)
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
+  const loadedForRef = useRef(null) // evita overwrite de edições em andamento
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return
-    const my = members.find(m => m.user_id === (supabase.auth.getUser?.() ? undefined : null)) // fallback
-    // Get current user's member
-    supabase.auth.getUser().then(({ data }) => {
-      const uid = data.user?.id
-      const meMember = members.find(m => m.user_id === uid)
-      setMe(meMember || null)
-      if (meMember) loadPrefs(meMember.id)
-    })
-  }, [members])
+    if (!isSupabaseConfigured || !me?.id) return
+    if (loadedForRef.current === me.id) return
+    loadedForRef.current = me.id
+    loadPrefs(me.id)
+  }, [me?.id])
 
   async function loadPrefs(memberId) {
     const { data } = await supabase

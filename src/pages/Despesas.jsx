@@ -255,6 +255,9 @@ export default function Despesas() {
               onEdit={() => { setEditing(e); setShowForm(true) }}
               onSettle={() => setSettleFor(e)}
               onDelete={async () => {
+                if (e.receipt_path) {
+                  await supabase.storage.from('expense-receipts').remove([e.receipt_path])
+                }
                 const { error } = await supabase.from('expenses').delete().eq('id', e.id)
                 if (error) { alert('Não foi possível excluir: ' + error.message); return }
                 load()
@@ -402,11 +405,18 @@ function ReceiptLink({ path }) {
   const [loading, setLoading] = useState(false)
   async function open(e) {
     e.preventDefault()
+    // Abre síncrono no gesto pra não ser bloqueado; setamos a URL quando resolver
+    const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
     setLoading(true)
     const { data, error } = await supabase.storage.from('expense-receipts').createSignedUrl(path, 300)
     setLoading(false)
-    if (error || !data?.signedUrl) return
-    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    if (error || !data?.signedUrl) {
+      w?.close()
+      alert('Não foi possível abrir o comprovante.')
+      return
+    }
+    if (w) w.location.href = data.signedUrl
+    else window.location.href = data.signedUrl
   }
   return (
     <button onClick={open} disabled={loading} className="text-[11px] text-bussola mt-1 hover:underline disabled:opacity-50">

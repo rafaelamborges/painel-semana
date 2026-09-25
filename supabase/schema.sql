@@ -350,3 +350,56 @@ create policy "expense_settlements_all" on public.expense_settlements for all
 
 -- Bucket privado + políticas (folder = family_id na raiz)
 -- insert into storage.buckets (id, name, public) values ('expense-receipts', 'expense-receipts', false);
+
+-- ─────────────────────────────────────────────────────────────
+-- Colunas evolutivas (adicionadas em migrações posteriores)
+-- ─────────────────────────────────────────────────────────────
+
+alter table public.family_members add column if not exists role_label text;
+alter table public.guard_patterns add column if not exists switch_time time default '08:00';
+
+-- ─────────────────────────────────────────────────────────────
+-- Notificações (inbox por destinatário + preferências por membro)
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.notification_preferences (
+  member_id uuid primary key references public.family_members(id) on delete cascade,
+  email_by_kind jsonb not null default '{}'::jsonb,
+  push_by_kind  jsonb not null default '{}'::jsonb,
+  quiet_start   time default '22:00',
+  quiet_end     time default '07:00',
+  updated_at    timestamptz default now()
+);
+alter table public.notification_preferences enable row level security;
+create policy "own prefs" on public.notification_preferences for all
+  using (member_id in (select id from public.family_members where user_id = auth.uid()))
+  with check (member_id in (select id from public.family_members where user_id = auth.uid()));
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  family_id uuid not null references public.families(id) on delete cascade,
+  recipient_member_id uuid not null references public.family_members(id) on delete cascade,
+  recipient_user_id uuid,
+  actor_member_id uuid references public.family_members(id) on delete set null,
+  kind text not null,
+  title text not null,
+  body text,
+  entity_type text,
+  entity_id uuid,
+  payload jsonb default '{}'::jsonb,
+  read_at timestamptz,
+  email_sent_at timestamptz,
+  push_sent_at timestamptz,
+  created_at timestamptz default now()
+);
+create index if not exists notifications_recipient_idx on public.notifications(recipient_user_id, created_at desc);
+create index if not exists notifications_unread_idx on public.notifications(recipient_user_id) where read_at is null;
+alter table public.notifications enable row level security;
+create policy "read own notifications" on public.notifications for select
+  using (recipient_user_id = auth.uid());
+create policy "update own notifications" on public.notifications for update
+  using (recipient_user_id = auth.uid())
+  with check (recipient_user_id = auth.uid());
+
+-- Fanout triggers, dispatch via pg_net e cron jobs vivem em migrações
+-- versionadas do Supabase — não replicados aqui para evitar drift.

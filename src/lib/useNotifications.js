@@ -1,10 +1,16 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from './supabase'
 import { useAuth } from '../context/AuthContext'
+
+// Cada instância cria um canal com sufixo único para não colidir com outros
+// consumers (Sidebar e Layout usam o hook simultaneamente).
+let channelSeq = 0
 
 export function useUnreadNotifications() {
   const { user } = useAuth()
   const [count, setCount] = useState(0)
+  const seqRef = useRef(0)
+  if (seqRef.current === 0) seqRef.current = ++channelSeq
 
   const refresh = useCallback(async () => {
     if (!user) { setCount(0); return }
@@ -20,7 +26,7 @@ export function useUnreadNotifications() {
     refresh()
     if (!user) return
     const channel = supabase
-      .channel(`notif-unread-${user.id}`)
+      .channel(`notif-unread-${user.id}-${seqRef.current}`)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notifications', filter: `recipient_user_id=eq.${user.id}` },
         () => refresh()
