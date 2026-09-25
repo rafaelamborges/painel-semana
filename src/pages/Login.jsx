@@ -56,7 +56,7 @@ export default function Login() {
 
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <p className="rotulo mb-4">Bem-vindo</p>
+          <p className="rotulo mb-4">Olá!</p>
           <h1 className="font-display leading-[1.06] tracking-[-0.035em] text-ink" style={{ fontSize: 'clamp(30px,4.6vw,44px)', fontWeight: 200 }}>
             Duas casas.<br />
             <em className="italic font-semibold">Uma só criança.</em>

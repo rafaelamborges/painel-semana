@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom'
 
 const navItems = [
   { to: '/',           label: 'Início',    icon: IconInicio, exact: true },
-  { to: '/guarda',     label: 'Rotina',    icon: IconRotina },
   { to: '/agenda',     label: 'Agenda',    icon: IconAgenda },
   { to: '/bolsa',      label: 'Bolsa',     icon: IconBolsa },
   { to: '/saude',      label: 'Saúde',     icon: IconSaude },
@@ -17,6 +16,7 @@ export default function BottomNav() {
             key={to}
             to={to}
             end={exact}
+            onClick={() => { if (exact) document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
             className="flex-1 min-h-[52px] flex flex-col items-center justify-center gap-1.5"
           >
             {({ isActive }) => (

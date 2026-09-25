@@ -50,8 +50,10 @@ export default function Layout() {
               </div>
             )}
             <NavLink to="/notificacoes" className="relative p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0" aria-label="Notificações">
-              <div className="w-[18px] h-[18px] border-[1.8px] border-ink-soft flex items-center justify-center"
-                style={{ borderRadius: '5px 5px 2px 2px' }} />
+              <svg className="w-[20px] h-[20px] text-ink-soft" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6" />
+                <path d="M10.5 19a1.5 1.5 0 003 0" />
+              </svg>
               {unread > 0 && (
                 <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-alerta text-white text-[10px] font-medium leading-none flex items-center justify-center">
                   {unread > 9 ? '9+' : unread}

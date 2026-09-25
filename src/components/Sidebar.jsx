@@ -8,14 +8,13 @@ import { ptBR } from 'date-fns/locale'
 
 const navItems = [
   { to: '/',          label: 'Início',    icon: IconInicio,    exact: true },
-  { to: '/guarda',    label: 'Rotina',    icon: IconRotina },
   { to: '/agenda',    label: 'Agenda',    icon: IconAgenda },
   { to: '/bolsa',     label: 'Bolsa',     icon: IconBolsa },
   { to: '/despesas',  label: 'Despesas',  icon: IconDespesas },
   { to: '/saude',     label: 'Saúde',     icon: IconSaude },
   { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
-  { to: '/notificacoes', label: 'Notificações', icon: IconAlertas, badge: 'unread' },
+  { to: '/notificacoes', label: 'Notificações', icon: IconSino,    badge: 'unread' },
   { to: '/lembretes',    label: 'Alertas',      icon: IconAlertas, showCount: true },
 ]
 
@@ -65,7 +64,10 @@ export default function Sidebar({ open, onClose }) {
             key={to}
             to={to}
             end={exact}
-            onClick={onClose}
+            onClick={() => {
+              if (exact) document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
+              onClose?.()
+            }}
             className={({ isActive }) => `nav-item${isActive ? ' nav-item-active' : ''}`}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
@@ -197,6 +199,14 @@ function IconAlertas({ className }) {
         style={{ borderRadius: '5px 5px 2px 2px' }}
       />
     </div>
+  )
+}
+function IconSino({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6" />
+      <path d="M10.5 19a1.5 1.5 0 003 0" />
+    </svg>
   )
 }
 function IconBolsa({ className }) {
