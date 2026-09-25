@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek,
-  isSameMonth, isToday, addMonths, subMonths, getDay } from 'date-fns'
+  isSameMonth, isToday, addMonths, subMonths, getDay, parseISO, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -19,13 +19,17 @@ const ROLE_LABELS = {
   other: 'Outro',
 }
 
-export default function Guarda({ embedded = false } = {}) {
+export default function Guarda() {
   const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, guardianLabels, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
+  const [events, setEvents] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
   const [showPatternForm, setShowPatternForm] = useState(false)
+  const [showEventForm, setShowEventForm] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(null)
+  const [eventFormDate, setEventFormDate] = useState(null)
   const [dayAction, setDayAction] = useState(null)
   const [tab, setTab] = useState('calendar')
 
@@ -34,6 +38,11 @@ export default function Guarda({ embedded = false } = {}) {
     loadSwaps()
   }, [family])
 
+  useEffect(() => {
+    if (!isSupabaseConfigured || !family) return
+    loadEvents()
+  }, [family, currentMonth])
+
   async function loadSwaps() {
     const { data } = await supabase
       .from('guard_swaps')
@@ -41,6 +50,40 @@ export default function Guarda({ embedded = false } = {}) {
       .eq('family_id', family.id)
       .order('created_at', { ascending: false })
     setSwaps(data || [])
+  }
+
+  async function loadEvents() {
+    const from = startOfMonth(currentMonth).toISOString()
+    const to = endOfMonth(currentMonth).toISOString()
+    const { data } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('family_id', family.id)
+      .gte('start_at', from)
+      .lte('start_at', to)
+      .order('start_at')
+    setEvents(data || [])
+  }
+
+  function getEventsForDay(day) {
+    return events.filter(ev => isSameDay(parseISO(ev.start_at), day))
+  }
+
+  function openNewEvent(date) {
+    setEditingEvent(null)
+    setEventFormDate(date || new Date())
+    setShowEventForm(true)
+  }
+
+  function openEditEvent(ev) {
+    setEditingEvent(ev)
+    setEventFormDate(parseISO(ev.start_at))
+    setShowEventForm(true)
+  }
+
+  async function deleteEvent(id) {
+    await supabase.from('calendar_events').delete().eq('id', id)
+    loadEvents()
   }
 
   function getOverrideForDay(day) {
@@ -60,10 +103,9 @@ export default function Guarda({ embedded = false } = {}) {
   }
 
   function openDayAction(day) {
-    if (!guardPattern || !permissions.canEdit) return
     const override = getOverrideForDay(day)
     const overrideGuardian = override?.reason.match(/\[override:(mother|father)\]/)?.[1] || null
-    const currentGuardian = overrideGuardian || getGuardForDate(day, guardPattern)
+    const currentGuardian = overrideGuardian || (guardPattern ? getGuardForDate(day, guardPattern) : null)
     setDayAction({ day, currentGuardian, override })
   }
 
@@ -111,13 +153,10 @@ export default function Guarda({ embedded = false } = {}) {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between mb-6">
-        {!embedded && (
-          <div>
-            <p className="rotulo mb-2">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</p>
-            <h1 className="page-title">Rotina de guarda</h1>
-          </div>
-        )}
-        {embedded && <div className="rotulo">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</div>}
+        <div>
+          <p className="rotulo mb-2">Compasso{child?.name ? ` · ${child.name}` : ''}</p>
+          <h1 className="page-title">Agenda</h1>
+        </div>
         {(permissions.canEdit || permissions.canAdd) && (
           <div className="flex gap-2 flex-wrap">
             {permissions.canEdit && (
@@ -127,7 +166,10 @@ export default function Guarda({ embedded = false } = {}) {
               <button onClick={() => setShowManualForm(true)} className="btn-secundario">Ajuste manual</button>
             )}
             {permissions.canAdd && (
-              <button onClick={() => setShowSwapForm(true)} className="btn-primario">Propor troca</button>
+              <button onClick={() => setShowSwapForm(true)} className="btn-secundario">Propor troca</button>
+            )}
+            {permissions.canAdd && (
+              <button onClick={() => openNewEvent()} className="btn-primario">Novo evento</button>
             )}
           </div>
         )}
@@ -182,7 +224,13 @@ export default function Guarda({ embedded = false } = {}) {
                 const style = isCurrentMonth ? getDayStyle(day) : {}
                 const isSwitchDay = getDay(day) === (guardPattern?.switch_day ?? 2)
                 const switchTimeLabel = (guardPattern?.switch_time || '08:00').slice(0, 5)
-                const clickable = isCurrentMonth && guardPattern && permissions.canEdit
+                const dayEvents = isCurrentMonth ? getEventsForDay(day) : []
+                // Clicável se tem padrão de guarda + edição, OU se tem eventos, OU se pode adicionar evento
+                const clickable = isCurrentMonth && (
+                  (guardPattern && permissions.canEdit) ||
+                  dayEvents.length > 0 ||
+                  permissions.canAdd
+                )
                 return (
                   <div
                     key={i}
@@ -196,7 +244,21 @@ export default function Guarda({ embedded = false } = {}) {
                       {format(day, 'd')}
                     </span>
                     {isSwitchDay && isCurrentMonth && (
-                      <div className="mt-1.5 text-[11px] font-light text-ink-soft">troca {switchTimeLabel}</div>
+                      <div className="mt-1 text-[10px] font-light text-ink-soft">troca {switchTimeLabel}</div>
+                    )}
+                    {dayEvents.length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {dayEvents.slice(0, 2).map(ev => (
+                          <div key={ev.id}
+                            className="truncate text-[10px] px-1.5 py-0.5 rounded text-white font-normal"
+                            style={{ backgroundColor: '#1E1B4B' }}>
+                            {ev.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-[10px] text-ink-mute px-1">+{dayEvents.length - 2}</div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )
@@ -295,17 +357,32 @@ export default function Guarda({ embedded = false } = {}) {
           members={members}
           guardPattern={guardPattern}
           setGuardPattern={setGuardPattern}
+          dayEvents={getEventsForDay(dayAction.day)}
+          onNewEvent={() => { openNewEvent(dayAction.day); setDayAction(null) }}
+          onEditEvent={(ev) => { openEditEvent(ev); setDayAction(null) }}
+          onDeleteEvent={async (id) => { await deleteEvent(id) }}
           onClose={() => setDayAction(null)}
           onSaved={() => { setDayAction(null); loadSwaps() }}
+        />
+      )}
+      {showEventForm && (
+        <EventForm
+          event={editingEvent}
+          date={eventFormDate || new Date()}
+          familyId={family?.id}
+          childId={child?.id}
+          onClose={() => { setShowEventForm(false); setEditingEvent(null) }}
+          onSaved={() => { setShowEventForm(false); setEditingEvent(null); loadEvents() }}
         />
       )}
     </div>
   )
 }
 
-function DayActionModal({ day, currentGuardian, override, familyId, members, guardPattern, setGuardPattern, onClose, onSaved }) {
-  const { guardianColors, guardianLabels, getCurrentUserMember } = useFamily()
+function DayActionModal({ day, currentGuardian, override, familyId, members, guardPattern, setGuardPattern, dayEvents = [], onNewEvent, onEditEvent, onDeleteEvent, onClose, onSaved }) {
+  const { guardianColors, guardianLabels, getCurrentUserMember, permissions } = useFamily()
   const [saving, setSaving] = useState(false)
+  const canEditGuard = guardPattern && permissions.canEdit
 
   const otherGuardian = currentGuardian === 'mother' ? 'father' : 'mother'
   const currentColor = currentGuardian ? guardianColors[currentGuardian] : null
@@ -380,14 +457,14 @@ function DayActionModal({ day, currentGuardian, override, familyId, members, gua
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-gray-800">
+            <h3 className="font-semibold text-gray-800 capitalize">
               {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
             </h3>
-            {currentColor && (
+            {currentColor && currentGuardian && (
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: currentColor.hex }} />
                 <p className="text-xs text-gray-500">
-                  Atualmente com <span className="font-medium" style={{ color: currentColor.hex }}>{guardianLabels[currentGuardian]}</span>
+                  Com <span className="font-medium" style={{ color: currentColor.hex }}>{guardianLabels[currentGuardian]}</span>
                   {override && <span className="ml-1 text-amber-600">· ajuste manual</span>}
                 </p>
               </div>
@@ -398,44 +475,91 @@ function DayActionModal({ day, currentGuardian, override, familyId, members, gua
           </button>
         </div>
 
-        <p className="text-xs text-gray-500 mb-4">
-          Passar para <span className="font-medium" style={otherColor ? { color: otherColor.hex } : {}}>{guardianLabels[otherGuardian]}</span>:
-        </p>
-
-        <div className="space-y-2">
-          <button onClick={handleDay} disabled={saving}
-            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
-            <p className="text-sm font-medium text-gray-800">Só neste dia</p>
-            <p className="text-xs text-gray-500 mt-0.5">Ajuste pontual — o resto do calendário não muda.</p>
-          </button>
-
-          <button onClick={handleWeek} disabled={saving}
-            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
-            <p className="text-sm font-medium text-gray-800">Só esta semana</p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Inverte de {format(weekStart, 'dd/MM')} até {format(weekEnd, 'dd/MM')}. As próximas semanas seguem o padrão original.
-            </p>
-          </button>
-
-          <button onClick={handleReorganize} disabled={saving}
-            className="w-full text-left p-4 rounded-xl border border-brand-200 bg-brand-50/40 hover:bg-brand-50 hover:border-brand-400 transition-colors disabled:opacity-50">
-            <p className="text-sm font-medium text-brand-700">A partir daqui, inverter</p>
-            <p className="text-xs text-brand-600/80 mt-0.5">
-              A alternância se readequa: a semana de {format(weekStart, 'dd/MM')} passa a ser de {guardianLabels[otherGuardian]} e as próximas semanas alternam a partir daí.
-            </p>
-          </button>
+        {/* Eventos do dia */}
+        <div className="mb-5">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="rotulo">Eventos do dia</p>
+            {permissions.canAdd && (
+              <button onClick={onNewEvent} className="btn-texto">+ Novo evento</button>
+            )}
+          </div>
+          {dayEvents.length === 0 ? (
+            <p className="text-xs text-gray-500 py-2">Nenhum evento neste dia.</p>
+          ) : (
+            <div className="space-y-2">
+              {dayEvents.map(ev => (
+                <div key={ev.id} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100">
+                  <div className="w-1 self-stretch rounded-full flex-shrink-0"
+                    style={{ backgroundColor: '#1E1B4B' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{ev.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {format(parseISO(ev.start_at), 'HH:mm')}
+                      {ev.end_at && ` – ${format(parseISO(ev.end_at), 'HH:mm')}`}
+                      {ev.location && ` · ${ev.location}`}
+                    </p>
+                    {ev.description && <p className="text-xs text-gray-400 mt-1 truncate">{ev.description}</p>}
+                  </div>
+                  {(permissions.canEdit || permissions.canAdd) && (
+                    <div className="flex flex-col gap-1 items-end flex-shrink-0">
+                      <button onClick={() => onEditEvent?.(ev)} className="btn-texto text-xs">Editar</button>
+                      {permissions.canDelete && (
+                        <button onClick={() => onDeleteEvent?.(ev.id).then(() => onClose())} className="text-xs text-red-400 hover:text-red-600">Remover</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {override && (
-          <button onClick={handleRemoveOverride} disabled={saving}
-            className="w-full mt-3 py-2.5 border border-red-100 text-red-600 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
-            Remover ajuste manual existente
-          </button>
+        {/* Ações de guarda — só quando dá pra editar */}
+        {canEditGuard && currentGuardian && (
+          <>
+            <div className="border-t border-linha pt-4 mb-3">
+              <p className="rotulo mb-3">Ajuste de guarda</p>
+              <p className="text-xs text-gray-500 mb-3">
+                Passar para <span className="font-medium" style={otherColor ? { color: otherColor.hex } : {}}>{guardianLabels[otherGuardian]}</span>:
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <button onClick={handleDay} disabled={saving}
+                className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
+                <p className="text-sm font-medium text-gray-800">Só neste dia</p>
+                <p className="text-xs text-gray-500 mt-0.5">Ajuste pontual — o resto do calendário não muda.</p>
+              </button>
+
+              <button onClick={handleWeek} disabled={saving}
+                className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors disabled:opacity-50">
+                <p className="text-sm font-medium text-gray-800">Só esta semana</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Inverte de {format(weekStart, 'dd/MM')} até {format(weekEnd, 'dd/MM')}. As próximas semanas seguem o padrão original.
+                </p>
+              </button>
+
+              <button onClick={handleReorganize} disabled={saving}
+                className="w-full text-left p-4 rounded-xl border border-brand-200 bg-brand-50/40 hover:bg-brand-50 hover:border-brand-400 transition-colors disabled:opacity-50">
+                <p className="text-sm font-medium text-brand-700">A partir daqui, inverter</p>
+                <p className="text-xs text-brand-600/80 mt-0.5">
+                  A alternância se readequa: a semana de {format(weekStart, 'dd/MM')} passa a ser de {guardianLabels[otherGuardian]} e as próximas semanas alternam a partir daí.
+                </p>
+              </button>
+            </div>
+
+            {override && (
+              <button onClick={handleRemoveOverride} disabled={saving}
+                className="w-full mt-3 py-2.5 border border-red-100 text-red-600 rounded-xl text-xs font-medium hover:bg-red-50 transition-colors disabled:opacity-50">
+                Remover ajuste manual existente
+              </button>
+            )}
+          </>
         )}
 
         <button onClick={onClose} disabled={saving}
           className="w-full mt-3 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
-          Cancelar
+          Fechar
         </button>
       </div>
     </div>
@@ -1203,6 +1327,108 @@ function PatternForm({ guardPattern, setGuardPattern, onClose }) {
             <button type="button" onClick={onClose} className="btn-secundario flex-1">Cancelar</button>
             <button type="submit" disabled={saving} className="btn-primario flex-1 disabled:opacity-50">
               {saving ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Evento de calendário (create/edit) ────────────────────────────────
+function EventForm({ event, date, familyId, childId, onClose, onSaved }) {
+  const isEdit = !!event
+  const initialDate = event ? parseISO(event.start_at) : date
+  const [dateStr, setDateStr] = useState(format(initialDate, 'yyyy-MM-dd'))
+  const [title, setTitle] = useState(event?.title || '')
+  const [description, setDescription] = useState(event?.description || '')
+  const [startTime, setStartTime] = useState(event ? format(parseISO(event.start_at), 'HH:mm') : '08:00')
+  const [endTime, setEndTime] = useState(event?.end_at ? format(parseISO(event.end_at), 'HH:mm') : '09:00')
+  const [location, setLocation] = useState(event?.location || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save(e) {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      const startAt = `${dateStr}T${startTime}:00`
+      const endAt   = `${dateStr}T${endTime}:00`
+      const payload = {
+        title: title.trim(),
+        description: description.trim() || null,
+        start_at: startAt,
+        end_at: endAt,
+        location: location.trim() || null,
+      }
+      if (isEdit) {
+        const { error: dbErr } = await supabase.from('calendar_events').update(payload).eq('id', event.id)
+        if (dbErr) throw dbErr
+      } else {
+        const { error: dbErr } = await supabase.from('calendar_events').insert({
+          ...payload,
+          family_id: familyId,
+          child_id: childId,
+          source: 'manual',
+        })
+        if (dbErr) throw dbErr
+      }
+      onSaved()
+    } catch (err) {
+      setError(err.message || 'Erro ao salvar evento. Tente novamente.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">{isEdit ? 'Editar evento' : 'Novo evento'}</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form onSubmit={save} className="space-y-3">
+          <input
+            type="text" placeholder="Título do evento" required
+            value={title} onChange={e => setTitle(e.target.value)}
+            className="input"
+          />
+          <div>
+            <label className="input-label">Data</label>
+            <input type="date" value={dateStr} onChange={e => setDateStr(e.target.value)} required className="input" />
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="input-label">Início</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input" />
+            </div>
+            <div className="flex-1">
+              <label className="input-label">Fim</label>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="input" />
+            </div>
+          </div>
+          <input
+            type="text" placeholder="Local (opcional)"
+            value={location} onChange={e => setLocation(e.target.value)}
+            className="input"
+          />
+          <textarea
+            placeholder="Observações (opcional)" rows={2}
+            value={description} onChange={e => setDescription(e.target.value)}
+            className="input resize-none"
+          />
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+          )}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-secundario flex-1">Cancelar</button>
+            <button type="submit" disabled={saving} className="btn-primario flex-1 disabled:opacity-50">
+              {saving ? 'Salvando…' : isEdit ? 'Salvar' : 'Criar evento'}
             </button>
           </div>
         </form>
