@@ -19,7 +19,7 @@ const ROLE_LABELS = {
   other: 'Outro',
 }
 
-export default function Guarda() {
+export default function Guarda({ embedded = false } = {}) {
   const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, guardianLabels, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
@@ -111,10 +111,13 @@ export default function Guarda() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between mb-6">
-        <div>
-          <p className="rotulo mb-2">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</p>
-          <h1 className="page-title">Rotina de guarda</h1>
-        </div>
+        {!embedded && (
+          <div>
+            <p className="rotulo mb-2">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</p>
+            <h1 className="page-title">Rotina de guarda</h1>
+          </div>
+        )}
+        {embedded && <div className="rotulo">{format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</div>}
         {(permissions.canEdit || permissions.canAdd) && (
           <div className="flex gap-2 flex-wrap">
             {permissions.canEdit && (

@@ -8,7 +8,6 @@ import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Agenda from './pages/Agenda'
-import Guarda from './pages/Guarda'
 import Saude from './pages/Saude'
 import Decisoes from './pages/Decisoes'
 import Lembretes from './pages/Lembretes'
@@ -44,7 +43,7 @@ export default function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="agenda" element={<Agenda />} />
-              <Route path="guarda" element={<Guarda />} />
+              <Route path="guarda" element={<Navigate to="/agenda?tab=rotina" replace />} />
               <Route path="saude" element={<Saude />} />
               <Route path="decisoes" element={<Decisoes />} />
               <Route path="lembretes" element={<Lembretes />} />

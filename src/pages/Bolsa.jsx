@@ -12,6 +12,7 @@ export default function Bolsa() {
   const [loading, setLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPrepare, setShowPrepare] = useState(false)
+  const [showAddReturn, setShowAddReturn] = useState(false)
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !family || !child) return
@@ -150,9 +151,26 @@ export default function Bolsa() {
                     <p className="text-[15px] font-normal text-ink truncate">{s.name}</p>
                     <p className="apoio">Enviado em {format(parseISO(s.sent_at), 'dd/MM')}</p>
                   </div>
+                  {permissions.canEdit && (
+                    <button
+                      onClick={async () => {
+                        await supabase.from('bag_shipments').update({ returned_at: new Date().toISOString() }).eq('id', s.id)
+                        load()
+                      }}
+                      className="btn-texto text-ink-mute"
+                      title="Marcar como devolvido"
+                    >
+                      ✓ devolvido
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
+          )}
+          {permissions.canAdd && (
+            <button onClick={() => setShowAddReturn(true)} className="btn-secundario w-full mt-3">
+              + Adicionar item para devolver
+            </button>
           )}
         </section>
       </div>
@@ -170,6 +188,74 @@ export default function Bolsa() {
           onSaved={() => { setShowPrepare(false); load() }}
         />
       )}
+
+      {showAddReturn && (
+        <AddReturnItemModal
+          familyId={family.id}
+          childId={child.id}
+          member={getCurrentUserMember()}
+          onClose={() => setShowAddReturn(false)}
+          onSaved={() => { setShowAddReturn(false); load() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function AddReturnItemModal({ familyId, childId, member, onClose, onSaved }) {
+  const [name, setName] = useState('')
+  const [sentAt, setSentAt] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [saving, setSaving] = useState(false)
+
+  async function submit() {
+    if (!name.trim()) return
+    setSaving(true)
+    await supabase.from('bag_shipments').insert({
+      family_id: familyId,
+      child_id: childId,
+      name: name.trim(),
+      sent_at: sentAt,
+      must_return: true,
+      created_by: member?.id || null,
+    })
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
+      <div className="bg-white w-full max-w-md p-6 rounded-faixa shadow-modal" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="section-title">Item para devolver</h3>
+          <button onClick={onClose} className="btn-icon" aria-label="Fechar">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <label className="input-label">O que precisa voltar?</label>
+        <input
+          className="input mb-4"
+          placeholder="Ex: Casaco azul, livro de matemática"
+          autoFocus value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && name.trim()) submit() }}
+        />
+
+        <label className="input-label">Foi enviado em</label>
+        <input
+          type="date" className="input mb-6"
+          value={sentAt} onChange={e => setSentAt(e.target.value)}
+        />
+
+        <div className="flex gap-2">
+          <button onClick={submit} disabled={!name.trim() || saving} className="btn-primario flex-1 disabled:opacity-40">
+            {saving ? 'Adicionando…' : 'Adicionar'}
+          </button>
+          <button onClick={onClose} className="btn-secundario">Cancelar</button>
+        </div>
+      </div>
     </div>
   )
 }
