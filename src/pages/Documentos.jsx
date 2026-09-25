@@ -86,16 +86,7 @@ export default function Documentos() {
 
   useEffect(() => { loadDocs() }, [loadDocs])
 
-  const filteredDocs = docs.filter(d => {
-    if (tab === 'gerais')  return !d.decision_id
-    if (tab === 'acordos') return !!d.decision_id
-    return true
-  })
-  const counts = {
-    todos:   docs.length,
-    gerais:  docs.filter(d => !d.decision_id).length,
-    acordos: docs.filter(d => !!d.decision_id).length,
-  }
+  const filteredDocs = docs
 
   async function openViewer(doc) {
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(doc.file_path, 300)
@@ -140,29 +131,14 @@ export default function Documentos() {
     <div className="max-w-7xl mx-auto">
       <div className="flex items-baseline justify-between flex-wrap gap-3 mb-6">
         <div>
-          <p className="rotulo mb-2">O histórico da criança é dela</p>
-          <h1 className="page-title">Histórico</h1>
-          {child && <p className="apoio mt-2">{child.name} · {docs.length}/{MAX_DOCS} documentos</p>}
+          <p className="rotulo mb-2">Arquivos {child?.name ? `de ${child.name}` : ''}</p>
+          <h1 className="page-title">Documentos</h1>
+          {child && <p className="apoio mt-2">{docs.length}/{MAX_DOCS} documentos</p>}
         </div>
         {!loading && docs.length < MAX_DOCS && permissions.canAdd && (
           <button onClick={() => setShowUpload(true)} className="btn-primario">Adicionar</button>
         )}
       </div>
-
-      {!loading && docs.length > 0 && (
-        <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl w-fit overflow-x-auto">
-          {[
-            { id: 'todos',   label: 'Todos'      },
-            { id: 'gerais',  label: 'Gerais'     },
-            { id: 'acordos', label: 'De acordos' },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${tab === t.id ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>
-              {t.label} <span className="text-xs opacity-60 ml-1">{counts[t.id]}</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -191,10 +167,6 @@ export default function Documentos() {
               </button>
             )}
           />
-        </div>
-      ) : filteredDocs.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 py-10 text-center text-sm text-gray-400">
-          Nenhum arquivo {tab === 'acordos' ? 'anexado a um acordo' : 'geral'} nesta pasta.
         </div>
       ) : (
         <>

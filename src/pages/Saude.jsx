@@ -10,7 +10,6 @@ import { EmptyState, EmptyDoctor } from '../components/illustrations'
 const AREAS = [
   { id: 'vacinas',   label: 'Vacinas',   icon: IconVacinas   },
   { id: 'consultas', label: 'Consultas', icon: IconConsultas },
-  { id: 'cartao',    label: 'Cartão',    icon: IconCartao    },
   { id: 'medicos',   label: 'Médicos',   icon: IconMedicos   },
   { id: 'remedios',  label: 'Remédios',  icon: IconRemedios  },
   { id: 'alergias',  label: 'Alergias',  icon: IconAlergias  },
@@ -28,7 +27,6 @@ const NOTE_CATEGORY = {
 
 function IconVacinas({ className })   { return <div className={`${className} relative flex items-center justify-center`}><div className="absolute w-full h-[1.8px] bg-current" /><div className="absolute h-full w-[1.8px] bg-current" /></div> }
 function IconConsultas({ className })  { return <div className={`${className} rounded-full border-[1.8px] border-current`} /> }
-function IconCartao({ className })     { return <div className={`${className} rounded-[3px] border-[1.8px] border-current`} /> }
 function IconMedicos({ className })    { return <div className={`${className} rounded-full border-[1.8px] border-current relative`}><div className="absolute inset-1 border-[1.8px] border-current rounded-full" /></div> }
 function IconRemedios({ className })   { return <div className={`${className} rounded-full border-[1.8px] border-current flex items-center justify-center`}><div className="w-[45%] h-[1.8px] bg-current" /></div> }
 function IconAlergias({ className })   { return <div className={`${className}`}><div className="w-full h-full border-[1.8px] border-current" style={{ borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)' }} /></div> }
@@ -47,6 +45,7 @@ function resolveInitialArea(params) {
   const raw = (params.get('area') || params.get('tab') || '').toLowerCase()
   if (!raw) return null
   if (raw === 'notas') return 'anotacoes'
+  if (raw === 'cartao') return 'vacinas' // cartão virou sub-aba de vacinas
   if (AREAS.some(a => a.id === raw)) return raw
   return null
 }
@@ -55,6 +54,7 @@ export default function Saude() {
   const { child, family, permissions } = useFamily()
   const [searchParams, setSearchParams] = useSearchParams()
   const [area, setArea] = useState(() => resolveInitialArea(searchParams))
+  const initialVacinasTab = (searchParams.get('area') || searchParams.get('tab') || '').toLowerCase() === 'cartao' ? 'cartao' : 'doses'
   const [consultations, setConsultations] = useState([])
   const [administered, setAdministered] = useState([])
   const [notesCounts, setNotesCounts] = useState({})
@@ -63,6 +63,7 @@ export default function Saude() {
   const [editingConsultation, setEditingConsultation] = useState(null)
   const [showVaccineForm, setShowVaccineForm] = useState(false)
   const [selectedVaccine, setSelectedVaccine] = useState(null)
+  const [vacinasTab, setVacinasTab] = useState(initialVacinasTab)
 
   const vaccinationSchedule = child?.birth_date ? generateVaccinationSchedule(child.birth_date) : []
 
@@ -131,9 +132,10 @@ export default function Saude() {
       ? { label: `${overdueVaccines.length} pendente${overdueVaccines.length > 1 ? 's' : ''}`, tone: 'alerta' }
       : upcomingVaccines.length > 0
         ? { label: `${upcomingVaccines.length} próxima${upcomingVaccines.length > 1 ? 's' : ''}`, tone: 'muted' }
-        : { label: `${doneVaccines.length} em dia`, tone: 'muted' },
+        : cardPhotosCount > 0
+          ? { label: `${doneVaccines.length} em dia · ${cardPhotosCount} foto${cardPhotosCount > 1 ? 's' : ''}`, tone: 'muted' }
+          : { label: `${doneVaccines.length} em dia`, tone: 'muted' },
     consultas: { label: consultations.length ? `${consultations.length} registro${consultations.length > 1 ? 's' : ''}` : 'Nenhum registro', tone: 'muted' },
-    cartao:    { label: cardPhotosCount ? `${cardPhotosCount} foto${cardPhotosCount > 1 ? 's' : ''}` : 'Nenhuma foto', tone: 'muted' },
     medicos:   { label: notesCounts.medico  ? `${notesCounts.medico} cadastrado${notesCounts.medico > 1 ? 's' : ''}`   : 'Nenhum cadastrado',  tone: 'muted' },
     remedios:  { label: notesCounts.remedio ? `${notesCounts.remedio} registro${notesCounts.remedio > 1 ? 's' : ''}`   : 'Nenhum registro',   tone: 'muted' },
     alergias:  { label: notesCounts.alergia ? `${notesCounts.alergia} registrada${notesCounts.alergia > 1 ? 's' : ''}` : 'Nenhuma registrada',tone: 'muted' },
@@ -193,38 +195,65 @@ export default function Saude() {
       {/* Vacinas */}
       {area === 'vacinas' && (
         <div className="space-y-6">
-          {upcomingVaccines.length > 0 && (
-            <div>
-              <p className="rotulo mb-3">Próximas ({upcomingVaccines.length})</p>
-              <div className="card-lista">
-                {upcomingVaccines.map(v => (
-                  <VaccineRow key={v.id} vaccine={v} status="upcoming"
-                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
-                  />
-                ))}
-              </div>
+          <div className="flex gap-2 border-b border-gray-100 pb-0 -mt-2">
+            {[
+              { id: 'doses',  label: 'Doses' },
+              { id: 'cartao', label: 'Cartão' },
+            ].map(t => (
+              <button
+                key={t.id}
+                onClick={() => setVacinasTab(t.id)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  vacinasTab === t.id
+                    ? 'border-bussola text-bussola'
+                    : 'border-transparent text-ink-mute hover:text-ink'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {vacinasTab === 'doses' && (
+            <div className="space-y-6">
+              {upcomingVaccines.length > 0 && (
+                <div>
+                  <p className="rotulo mb-3">Próximas ({upcomingVaccines.length})</p>
+                  <div className="card-lista">
+                    {upcomingVaccines.map(v => (
+                      <VaccineRow key={v.id} vaccine={v} status="upcoming"
+                        onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {overdueVaccines.length > 0 && (
+                <div>
+                  <p className="rotulo mb-3 text-alerta">Pendentes ({overdueVaccines.length})</p>
+                  <div className="card-lista">
+                    {overdueVaccines.map(v => (
+                      <VaccineRow key={v.id} vaccine={v} status="overdue"
+                        onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {doneVaccines.length > 0 && (
+                <div>
+                  <p className="rotulo mb-3">Em dia ({doneVaccines.length})</p>
+                  <div className="card-lista">
+                    {doneVaccines.map(v => (
+                      <VaccineRow key={v.id} vaccine={v} status="done" administeredRecord={administeredMap.get(v.id)} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          {overdueVaccines.length > 0 && (
-            <div>
-              <p className="rotulo mb-3 text-alerta">Pendentes ({overdueVaccines.length})</p>
-              <div className="card-lista">
-                {overdueVaccines.map(v => (
-                  <VaccineRow key={v.id} vaccine={v} status="overdue"
-                    onAdminister={permissions.canAdd ? () => { setSelectedVaccine(v); setShowVaccineForm(true) } : undefined} />
-                ))}
-              </div>
-            </div>
-          )}
-          {doneVaccines.length > 0 && (
-            <div>
-              <p className="rotulo mb-3">Em dia ({doneVaccines.length})</p>
-              <div className="card-lista">
-                {doneVaccines.map(v => (
-                  <VaccineRow key={v.id} vaccine={v} status="done" administeredRecord={administeredMap.get(v.id)} />
-                ))}
-              </div>
-            </div>
+
+          {vacinasTab === 'cartao' && (
+            <VaccinationCardTab child={child} family={family} onCountChange={loadCardPhotosCount} />
           )}
         </div>
       )}
@@ -265,11 +294,6 @@ export default function Saude() {
             </div>
           )}
         </div>
-      )}
-
-      {/* Cartão */}
-      {area === 'cartao' && (
-        <VaccinationCardTab child={child} family={family} />
       )}
 
       {/* Categorias de notas: Médicos, Remédios, Alergias, Exames, Anotações */}
@@ -1002,7 +1026,7 @@ Adicionar {catConfig?.label}
 
 const MAX_PHOTOS = 5
 
-function VaccinationCardTab({ child, family }) {
+function VaccinationCardTab({ child, family, onCountChange }) {
   const [photos, setPhotos] = useState([]) // [{ path, url }]
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -1069,7 +1093,11 @@ function VaccinationCardTab({ child, family }) {
         if (data?.signedUrl) newPhotos.push({ path, url: data.signedUrl })
       }
     }
-    setPhotos(prev => [...prev, ...newPhotos])
+    setPhotos(prev => {
+      const next = [...prev, ...newPhotos]
+      onCountChange?.()
+      return next
+    })
     setUploading(false)
     e.target.value = ''
   }
@@ -1078,6 +1106,7 @@ function VaccinationCardTab({ child, family }) {
     setUploading(true)
     await supabase.storage.from('vaccination-cards').remove([photo.path])
     setPhotos(prev => prev.filter(p => p.path !== photo.path))
+    onCountChange?.()
     setUploading(false)
   }
 

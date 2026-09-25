@@ -25,6 +25,7 @@ export default function Guarda() {
   const [swaps, setSwaps] = useState([])
   const [showSwapForm, setShowSwapForm] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
+  const [showPatternForm, setShowPatternForm] = useState(false)
   const [dayAction, setDayAction] = useState(null)
   const [tab, setTab] = useState('calendar')
 
@@ -117,6 +118,9 @@ export default function Guarda() {
         {(permissions.canEdit || permissions.canAdd) && (
           <div className="flex gap-2 flex-wrap">
             {permissions.canEdit && (
+              <button onClick={() => setShowPatternForm(true)} className="btn-secundario">Configurar troca padrão</button>
+            )}
+            {permissions.canEdit && (
               <button onClick={() => setShowManualForm(true)} className="btn-secundario">Ajuste manual</button>
             )}
             {permissions.canAdd && (
@@ -173,7 +177,8 @@ export default function Guarda() {
                 const isCurrentMonth = isSameMonth(day, currentMonth)
                 const isTodayDay = isToday(day)
                 const style = isCurrentMonth ? getDayStyle(day) : {}
-                const isTuesday = getDay(day) === 2
+                const isSwitchDay = getDay(day) === (guardPattern?.switch_day ?? 2)
+                const switchTimeLabel = (guardPattern?.switch_time || '08:00').slice(0, 5)
                 const clickable = isCurrentMonth && guardPattern && permissions.canEdit
                 return (
                   <div
@@ -187,8 +192,8 @@ export default function Guarda() {
                     <span className={`text-[13px] font-normal inline-flex w-[22px] h-[22px] items-center justify-center rounded-full ${isTodayDay ? 'bg-bussola text-white' : 'text-ink'}`}>
                       {format(day, 'd')}
                     </span>
-                    {isTuesday && isCurrentMonth && (
-                      <div className="mt-1.5 text-[11px] font-light text-ink-soft">troca 18h</div>
+                    {isSwitchDay && isCurrentMonth && (
+                      <div className="mt-1.5 text-[11px] font-light text-ink-soft">troca {switchTimeLabel}</div>
                     )}
                   </div>
                 )
@@ -270,6 +275,13 @@ export default function Guarda() {
       )}
       {showManualForm && (
         <ManualOverrideForm familyId={family?.id} members={members} onClose={() => setShowManualForm(false)} onSaved={() => { setShowManualForm(false); loadSwaps() }} />
+      )}
+      {showPatternForm && guardPattern && (
+        <PatternForm
+          guardPattern={guardPattern}
+          setGuardPattern={setGuardPattern}
+          onClose={() => setShowPatternForm(false)}
+        />
       )}
       {dayAction && (
         <DayActionModal
@@ -621,7 +633,7 @@ function MembersTab({ familyId, members, onMembersChanged }) {
                       )}
                     </div>
                   )}
-                  <p className="text-xs text-gray-500">{ROLE_LABELS[m.role] || m.role}{m.email ? ` · ${m.email}` : ''}</p>
+                  <p className="text-xs text-gray-500">{m.role_label || ROLE_LABELS[m.role] || m.role}{m.email ? ` · ${m.email}` : ''}</p>
                 </div>
                 {permissions.canManageUsers && !isSysadmin && renamingId !== m.id && (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -762,6 +774,7 @@ function InviteModal({ onClose }) {
 function AddMemberForm({ familyId, onClose, onSaved }) {
   const [name, setName] = useState('')
   const [role, setRole] = useState('babysitter')
+  const [roleLabel, setRoleLabel] = useState('')
   const [color, setColor] = useState('#f59e0b')
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
@@ -775,6 +788,7 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
       user_id: null,
       name,
       role,
+      role_label: roleLabel.trim() || null,
       color,
       email: email || null,
     })
@@ -808,12 +822,15 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
             <label className="text-xs font-medium text-gray-500 mb-2 block">Papel</label>
             <div className="grid grid-cols-2 gap-2">
               {extraRoles.map(r => (
-                <button key={r.value} type="button" onClick={() => setRole(r.value)}
+                <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value !== 'other') setRoleLabel('') }}
                   className={`py-2 rounded-xl text-sm font-medium border transition-colors ${role === r.value ? 'bg-brand-50 border-brand-400 text-brand-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                   {r.label}
                 </button>
               ))}
             </div>
+            <input type="text" value={roleLabel} onChange={e => setRoleLabel(e.target.value)}
+              placeholder={role === 'other' ? 'Descreva o papel (ex: madrinha, professora)' : 'Ou personalize (ex: padrasto, madrinha)…'}
+              className="w-full mt-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Email (opcional)</label>
@@ -1109,6 +1126,80 @@ function SwapForm({ familyId, onClose, onSaved }) {
             <button type="submit" disabled={saving}
               className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50">
               {saving ? 'Enviando…' : 'Solicitar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+const WEEKDAY_OPTIONS = [
+  { value: 0, label: 'Domingo' },
+  { value: 1, label: 'Segunda' },
+  { value: 2, label: 'Terça' },
+  { value: 3, label: 'Quarta' },
+  { value: 4, label: 'Quinta' },
+  { value: 5, label: 'Sexta' },
+  { value: 6, label: 'Sábado' },
+]
+
+function PatternForm({ guardPattern, setGuardPattern, onClose }) {
+  const [switchDay, setSwitchDay] = useState(guardPattern.switch_day ?? 2)
+  const [switchTime, setSwitchTime] = useState((guardPattern.switch_time || '08:00').slice(0, 5))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    const { error } = await supabase.from('guard_patterns')
+      .update({ switch_day: switchDay, switch_time: switchTime })
+      .eq('id', guardPattern.id)
+    if (error) {
+      setError(error.message)
+      setSaving(false)
+      return
+    }
+    setGuardPattern({ ...guardPattern, switch_day: switchDay, switch_time: switchTime })
+    setSaving(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="section-title">Configurar troca padrão</h3>
+          <button onClick={onClose} className="btn-icon" aria-label="Fechar">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p className="corpo mb-5">
+          Define o dia da semana e o horário em que a criança passa de uma casa para a outra. Vale para todas as trocas do padrão.
+        </p>
+        <form onSubmit={save} className="space-y-4">
+          <div>
+            <label className="input-label">Dia da semana</label>
+            <select value={switchDay} onChange={e => setSwitchDay(Number(e.target.value))} className="select">
+              {WEEKDAY_OPTIONS.map(d => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="input-label">Horário</label>
+            <input type="time" value={switchTime} onChange={e => setSwitchTime(e.target.value)} required
+              className="input" />
+          </div>
+          {error && <p className="text-alerta text-[13px]">{error}</p>}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-secundario flex-1">Cancelar</button>
+            <button type="submit" disabled={saving} className="btn-primario flex-1 disabled:opacity-50">
+              {saving ? 'Salvando…' : 'Salvar'}
             </button>
           </div>
         </form>

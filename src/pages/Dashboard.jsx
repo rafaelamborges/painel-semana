@@ -7,7 +7,6 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
-import { getVaccineAlerts } from '../lib/pni'
 
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
@@ -30,9 +29,8 @@ export default function Dashboard() {
   // Próxima troca: primeiro switch_day após hoje
   const proximaTroca = new Date(weekStart); proximaTroca.setDate(proximaTroca.getDate() + 7)
 
-  const vaccineAlerts = child?.birth_date ? getVaccineAlerts(child.birth_date) : []
-  const urgentVaccines = vaccineAlerts.filter(v => v.status === 'overdue').slice(0, 2)
-  const upcomingVaccines = vaccineAlerts.filter(v => v.status === 'scheduled').slice(0, 1)
+  // Horário da troca (formato HH:mm). Fallback 08:00 se ainda não estiver preenchido.
+  const switchTime = (guardPattern?.switch_time || '08:00').slice(0, 5)
 
   useEffect(() => {
     if (!isSupabaseConfigured || !family) return
@@ -77,26 +75,14 @@ export default function Dashboard() {
 
   const alertas = useMemo(() => {
     const out = []
-    for (const v of urgentVaccines) {
-      out.push({
-        nivel: 'URGENTE', cor: 'text-alerta',
-        texto: `${v.vaccine_name}, ${v.dose_label}: pendente.`,
-      })
-    }
     if (therapyAlert) {
       out.push({
         nivel: 'ATENÇÃO', cor: 'text-ink-mute',
         texto: therapyAlert.message,
       })
     }
-    for (const v of upcomingVaccines) {
-      out.push({
-        nivel: 'INFORMATIVO', cor: 'text-ink-mute',
-        texto: `${v.vaccine_name} — próxima dose.`,
-      })
-    }
     return out.slice(0, 2)
-  }, [urgentVaccines, upcomingVaccines, therapyAlert])
+  }, [therapyAlert])
 
   return (
     <div className="max-w-[1320px] mx-auto space-y-6">
@@ -145,7 +131,7 @@ export default function Dashboard() {
                 <span className="text-[20px] font-medium leading-tight text-ink">{guardLabel}</span>
               </div>
               <p className="text-[15px] font-light text-ink-body">
-                De {format(weekStart, "EEE, dd/MM", { locale: ptBR })} a {format(weekEnd, "EEE, dd/MM 'às' HH'h'", { locale: ptBR })}.
+                De {format(weekStart, "EEE, dd/MM", { locale: ptBR })} a {format(weekEnd, "EEE, dd/MM", { locale: ptBR })} às {switchTime}.
               </p>
               <div className="flex h-[6px] rounded-full overflow-hidden mt-5">
                 <div style={{ flex: cumpridos || 1, backgroundColor: guardColor.hex }} />
@@ -158,9 +144,12 @@ export default function Dashboard() {
             </div>
           )}
           <div className="card">
-            <p className="rotulo mb-4">Próxima troca</p>
+            <div className="flex items-baseline justify-between mb-4 gap-3">
+              <p className="rotulo">Próxima troca</p>
+              <Link to="/guarda" className="btn-texto">Editar</Link>
+            </div>
             <p className="text-[17px] font-light leading-snug text-ink-body">
-              {format(proximaTroca, "EEEE, dd/MM 'às' HH'h'", { locale: ptBR })}.
+              {format(proximaTroca, "EEEE, dd/MM", { locale: ptBR })} às {switchTime}.
             </p>
           </div>
         </div>
@@ -212,18 +201,9 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Coluna 3 — Mini calendário + card de marca */}
+        {/* Coluna 3 — Mini calendário */}
         <div className="flex flex-col gap-5 min-w-0">
           <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
-          <div className="card-marca">
-            <p className="font-display leading-snug tracking-tight text-ink" style={{ fontSize: '24px', fontWeight: 200 }}>
-              O histórico da criança <em className="italic font-semibold">é dela</em>.
-            </p>
-            <p className="text-[15px] font-light text-ink-body mt-3">
-              Vacinas, agenda, documentos e combinados — em ordem, com autoria e data.
-            </p>
-            <Link to="/documentos" className="btn-texto mt-4">Abrir histórico</Link>
-          </div>
         </div>
       </div>
     </div>
