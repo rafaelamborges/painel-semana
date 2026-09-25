@@ -8,22 +8,25 @@ const MAIL_FROM = Deno.env.get('MAIL_FROM') || 'Compasso <ola@familiaemcompasso.
 const APP_URL = Deno.env.get('APP_URL') || 'https://www.familiaemcompasso.com.br'
 
 const ENTITY_PATH: Record<string, string> = {
-  guard_swap:   '/guarda',
-  decision:     '/decisoes',
-  consultation: '/saude',
-  expense:      '/despesas',
-  document:     '/documentos',
+  guard_swap:    '/guarda',
+  guard_pattern: '/guarda',
+  decision:      '/decisoes',
+  consultation:  '/saude',
+  expense:       '/despesas',
+  document:      '/documentos',
 }
 
 const KIND_LABEL: Record<string, string> = {
-  guard_swap_requested: 'Pedido de troca de guarda',
-  guard_swap_approved:  'Troca de guarda aprovada',
-  guard_swap_denied:    'Troca de guarda negada',
-  decision_created:     'Novo combinado',
-  consultation_created: 'Nova consulta',
-  expense_created:      'Nova despesa',
-  expense_settled:      'Acerto registrado',
-  document_created:     'Novo documento',
+  guard_swap_requested:  'Pedido de troca de guarda',
+  guard_swap_approved:   'Troca de guarda aprovada',
+  guard_swap_denied:     'Troca de guarda negada',
+  guard_switch_eve:      'Véspera de troca',
+  decision_created:      'Novo combinado',
+  consultation_created:  'Nova consulta',
+  consultation_upcoming: 'Consulta amanhã',
+  expense_created:       'Nova despesa',
+  expense_settled:       'Acerto registrado',
+  document_created:      'Novo documento',
 }
 
 function corsHeaders() {

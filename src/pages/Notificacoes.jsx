@@ -6,22 +6,25 @@ import { useAuth } from '../context/AuthContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const KIND_META = {
-  guard_swap_requested: { label: 'Pedido de troca',    tone: 'bg-aurora text-[#7A2141]' },
-  guard_swap_approved:  { label: 'Troca aprovada',     tone: 'bg-[#DCFCE7] text-[#166534]' },
-  guard_swap_denied:    { label: 'Troca negada',       tone: 'bg-[#FEE4E5] text-[#B91C1C]' },
-  decision_created:     { label: 'Novo combinado',     tone: 'bg-bussola-wash text-bussola' },
-  consultation_created: { label: 'Consulta',           tone: 'bg-[#EEF0FF] text-[#4C48A9]' },
-  expense_created:      { label: 'Nova despesa',       tone: 'bg-[#FEF3C7] text-[#92400E]' },
-  expense_settled:      { label: 'Acerto de despesa',  tone: 'bg-[#DCFCE7] text-[#166534]' },
-  document_created:     { label: 'Novo documento',     tone: 'bg-[#E0E7FF] text-[#3730A3]' },
+  guard_swap_requested:  { label: 'Pedido de troca',    tone: 'bg-aurora text-[#7A2141]' },
+  guard_swap_approved:   { label: 'Troca aprovada',     tone: 'bg-[#DCFCE7] text-[#166534]' },
+  guard_swap_denied:     { label: 'Troca negada',       tone: 'bg-[#FEE4E5] text-[#B91C1C]' },
+  guard_switch_eve:      { label: 'Véspera de troca',   tone: 'bg-aurora text-[#7A2141]' },
+  decision_created:      { label: 'Novo combinado',     tone: 'bg-bussola-wash text-bussola' },
+  consultation_created:  { label: 'Consulta',           tone: 'bg-[#EEF0FF] text-[#4C48A9]' },
+  consultation_upcoming: { label: 'Consulta amanhã',    tone: 'bg-[#EEF0FF] text-[#4C48A9]' },
+  expense_created:       { label: 'Nova despesa',       tone: 'bg-[#FEF3C7] text-[#92400E]' },
+  expense_settled:       { label: 'Acerto de despesa',  tone: 'bg-[#DCFCE7] text-[#166534]' },
+  document_created:      { label: 'Novo documento',     tone: 'bg-[#E0E7FF] text-[#3730A3]' },
 }
 
 const ENTITY_PATH = {
-  guard_swap:   '/guarda',
-  decision:     '/decisoes',
-  consultation: '/saude',
-  expense:      '/despesas',
-  document:     '/documentos',
+  guard_swap:    '/guarda',
+  guard_pattern: '/guarda',
+  decision:      '/decisoes',
+  consultation:  '/saude',
+  expense:       '/despesas',
+  document:      '/documentos',
 }
 
 export default function Notificacoes() {

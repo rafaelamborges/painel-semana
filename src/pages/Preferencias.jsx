@@ -3,14 +3,16 @@ import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const KINDS = [
-  { id: 'guard_swap_requested', label: 'Pedido de troca de guarda',    hint: 'Alta prioridade' },
-  { id: 'guard_swap_approved',  label: 'Troca de guarda aprovada' },
-  { id: 'guard_swap_denied',    label: 'Troca de guarda negada' },
-  { id: 'decision_created',     label: 'Novo combinado' },
-  { id: 'consultation_created', label: 'Nova consulta médica' },
-  { id: 'expense_created',      label: 'Nova despesa' },
-  { id: 'expense_settled',      label: 'Acerto de despesa recebido' },
-  { id: 'document_created',     label: 'Novo documento' },
+  { id: 'guard_swap_requested',  label: 'Pedido de troca de guarda',    hint: 'Alta prioridade' },
+  { id: 'guard_swap_approved',   label: 'Troca de guarda aprovada' },
+  { id: 'guard_swap_denied',     label: 'Troca de guarda negada' },
+  { id: 'guard_switch_eve',      label: 'Véspera de troca (aviso 24h antes)', hint: 'Diário, 08h' },
+  { id: 'decision_created',      label: 'Novo combinado' },
+  { id: 'consultation_created',  label: 'Nova consulta médica cadastrada' },
+  { id: 'consultation_upcoming', label: 'Consulta amanhã (aviso 24h antes)', hint: 'Diário, 09h' },
+  { id: 'expense_created',       label: 'Nova despesa' },
+  { id: 'expense_settled',       label: 'Acerto de despesa recebido' },
+  { id: 'document_created',      label: 'Novo documento' },
 ]
 
 export default function Preferencias() {
