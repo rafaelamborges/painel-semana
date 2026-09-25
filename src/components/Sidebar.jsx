@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useFamily } from '../context/FamilyContext'
 import { getGuardForDate } from '../lib/guard'
+import { useUnreadNotifications } from '../lib/useNotifications'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -14,12 +15,14 @@ const navItems = [
   { to: '/saude',     label: 'Saúde',     icon: IconSaude },
   { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
-  { to: '/lembretes', label: 'Alertas',   icon: IconAlertas, showCount: true },
+  { to: '/notificacoes', label: 'Notificações', icon: IconAlertas, badge: 'unread' },
+  { to: '/lembretes',    label: 'Alertas',      icon: IconAlertas, showCount: true },
 ]
 
 export default function Sidebar({ open, onClose }) {
   const { signOut } = useAuth()
   const { child, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
+  const { count: unread } = useUnreadNotifications()
   const navigate = useNavigate()
 
   const today = new Date()
@@ -57,7 +60,7 @@ export default function Sidebar({ open, onClose }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-1 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, label, icon: Icon, exact }) => (
+        {navItems.map(({ to, label, icon: Icon, exact, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -66,7 +69,12 @@ export default function Sidebar({ open, onClose }) {
             className={({ isActive }) => `nav-item${isActive ? ' nav-item-active' : ''}`}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {badge === 'unread' && unread > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-alerta text-white text-[10px] font-medium leading-none flex items-center justify-center">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

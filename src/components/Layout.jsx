@@ -4,10 +4,12 @@ import BottomNav from './BottomNav'
 import { useState } from 'react'
 import { useFamily } from '../context/FamilyContext'
 import { getGuardForDate } from '../lib/guard'
+import { useUnreadNotifications } from '../lib/useNotifications'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { guardPattern, guardianColors, guardianLabels } = useFamily()
+  const { count: unread } = useUnreadNotifications()
 
   const today = new Date()
   const currentGuard = guardPattern ? getGuardForDate(today, guardPattern) : null
@@ -47,9 +49,14 @@ export default function Layout() {
                 <span className="text-[13px] font-normal text-ink-soft truncate max-w-[120px]">{guardLabel}</span>
               </div>
             )}
-            <NavLink to="/lembretes" className="p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0" aria-label="Alertas">
+            <NavLink to="/notificacoes" className="relative p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0" aria-label="Notificações">
               <div className="w-[18px] h-[18px] border-[1.8px] border-ink-soft flex items-center justify-center"
                 style={{ borderRadius: '5px 5px 2px 2px' }} />
+              {unread > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[16px] h-[16px] px-1 rounded-full bg-alerta text-white text-[10px] font-medium leading-none flex items-center justify-center">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
             </NavLink>
           </div>
         </header>

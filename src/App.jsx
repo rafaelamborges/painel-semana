@@ -17,6 +17,8 @@ import Join from './pages/Join'
 import Admin from './pages/Admin'
 import Bolsa from './pages/Bolsa'
 import Despesas from './pages/Despesas'
+import Notificacoes from './pages/Notificacoes'
+import Preferencias from './pages/Preferencias'
 import Privacidade from './pages/Privacidade'
 import Termos from './pages/Termos'
 
@@ -50,6 +52,8 @@ export default function App() {
               <Route path="admin" element={<Admin />} />
               <Route path="bolsa" element={<Bolsa />} />
               <Route path="despesas" element={<Despesas />} />
+              <Route path="notificacoes" element={<Notificacoes />} />
+              <Route path="preferencias" element={<Preferencias />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
