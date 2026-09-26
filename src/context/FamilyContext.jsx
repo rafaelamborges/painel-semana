@@ -12,10 +12,11 @@ function hexToRgba(hex, alpha = 0.15) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-export function FamilyProvider({ children }) {
+export function FamilyProvider({ children: reactChildren }) {
   const { user } = useAuth()
   const [family, setFamily] = useState(null)
   const [child, setChild] = useState(null)
+  const [childrenList, setChildrenList] = useState([])
   const [members, setMembers] = useState([])
   const [guardPattern, setGuardPattern] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -81,24 +82,35 @@ export function FamilyProvider({ children }) {
 
       setMembers(allMembers || [])
 
-      // Load first child
-      const { data: children } = await supabase
+      // Load todas as crianças da família
+      const { data: kidsData } = await supabase
         .from('children')
         .select('*')
         .eq('family_id', familyId)
-        .limit(1)
+        .order('created_at', { ascending: true })
 
-      if (children?.[0]) {
-        setChild(children[0])
+      const kids = kidsData || []
+      setChildrenList(kids)
 
-        // Load guard pattern
+      if (kids.length) {
+        // Recupera qual criança estava ativa (por família) do localStorage
+        const stored = typeof window !== 'undefined'
+          ? window.localStorage.getItem(`compasso.active-child.${familyId}`)
+          : null
+        const chosen = kids.find(k => k.id === stored) || kids[0]
+        setChild(chosen)
+
+        // Load guard pattern da criança escolhida
         const { data: pattern } = await supabase
           .from('guard_patterns')
           .select('*')
-          .eq('child_id', children[0].id)
+          .eq('child_id', chosen.id)
           .maybeSingle()
 
         setGuardPattern(pattern || null)
+      } else {
+        setChild(null)
+        setGuardPattern(null)
       }
     } catch (err) {
       console.error('Error loading family:', err)
@@ -119,10 +131,27 @@ export function FamilyProvider({ children }) {
     return members.find(m => m.user_id === user?.id)
   }
 
+  async function setActiveChild(childId) {
+    const chosen = childrenList.find(k => k.id === childId)
+    if (!chosen || !family) return
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`compasso.active-child.${family.id}`, chosen.id)
+    }
+    setChild(chosen)
+    const { data: pattern } = await supabase
+      .from('guard_patterns')
+      .select('*')
+      .eq('child_id', chosen.id)
+      .maybeSingle()
+    setGuardPattern(pattern || null)
+  }
+
   return (
     <FamilyContext.Provider value={{
       family,
       child,
+      children: childrenList,
+      setActiveChild,
       members,
       guardPattern,
       loading,
@@ -136,7 +165,7 @@ export function FamilyProvider({ children }) {
       myAccessRole,
       permissions,
     }}>
-      {children}
+      {reactChildren}
     </FamilyContext.Provider>
   )
 }
