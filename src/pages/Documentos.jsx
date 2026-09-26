@@ -55,7 +55,6 @@ export default function Documentos() {
   const [showUpload, setShowUpload] = useState(false)
   const [viewer, setViewer] = useState(null)
   const [setupRequired, setSetupRequired] = useState(false)
-  const [tab, setTab] = useState('todos')
 
   const loadDocs = useCallback(async () => {
     if (!family || !child) return

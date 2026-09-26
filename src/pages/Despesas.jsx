@@ -470,6 +470,10 @@ function ExpenseForm({ expense, family, child, members, defaultShares, guardians
         .from('expense-receipts')
         .upload(path, receiptFile, { upsert: false })
       if (upErr) { setError('Erro ao enviar comprovante: ' + upErr.message); setSaving(false); return }
+      // Remove o anterior pra não ficar arquivo órfão no bucket
+      if (receiptPath && receiptPath !== path) {
+        await supabase.storage.from('expense-receipts').remove([receiptPath])
+      }
       finalReceiptPath = path
     }
 
@@ -696,6 +700,7 @@ function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
   const nonPayerIds = Object.keys(shares).filter(mid => mid !== expense.payer_id && Number(shares[mid] || 0) > 0)
   const [memberId, setMemberId] = useState(nonPayerIds[0] || '')
   const [amount, setAmount] = useState('')
+  const [amountTouched, setAmountTouched] = useState(false)
   const [settledAt, setSettledAt] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -703,10 +708,11 @@ function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
 
   useEffect(() => {
     if (!memberId) return
+    if (amountTouched) return // respeita valor digitado pelo usuário
     const pct = Number(shares[memberId] || 0)
     const expected = Math.round(Number(expense.amount_cents) * pct / 100)
     setAmount((expected / 100).toString().replace('.', ','))
-  }, [memberId, expense.amount_cents])
+  }, [memberId, expense.amount_cents, amountTouched])
 
   if (nonPayerIds.length === 0) {
     return (
@@ -763,7 +769,7 @@ function SettleForm({ expense, memberById, defaultShares, onClose, onSaved }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="rotulo mb-1 block">Valor (R$)</label>
-            <input type="text" value={amount} onChange={e => setAmount(e.target.value)} required className="input" />
+            <input type="text" value={amount} onChange={e => { setAmount(e.target.value); setAmountTouched(true) }} required className="input" />
           </div>
           <div>
             <label className="rotulo mb-1 block">Data</label>

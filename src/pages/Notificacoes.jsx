@@ -19,8 +19,8 @@ const KIND_META = {
 }
 
 const ENTITY_PATH = {
-  guard_swap:    '/guarda',
-  guard_pattern: '/guarda',
+  guard_swap:    '/agenda',
+  guard_pattern: '/agenda',
   decision:      '/decisoes',
   consultation:  '/saude',
   expense:       '/despesas',

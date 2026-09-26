@@ -298,11 +298,13 @@ function AddReturnItemModal({ familyId, childId, member, onClose, onSaved }) {
   const [name, setName] = useState('')
   const [sentAt, setSentAt] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   async function submit() {
     if (!name.trim()) return
     setSaving(true)
-    await supabase.from('bag_shipments').insert({
+    setError('')
+    const { error: err } = await supabase.from('bag_shipments').insert({
       family_id: familyId,
       child_id: childId,
       name: name.trim(),
@@ -310,7 +312,7 @@ function AddReturnItemModal({ familyId, childId, member, onClose, onSaved }) {
       must_return: true,
       created_by: member?.id || null,
     })
-    setSaving(false)
+    if (err) { setError(err.message); setSaving(false); return }
     onSaved()
   }
 
@@ -340,6 +342,8 @@ function AddReturnItemModal({ familyId, childId, member, onClose, onSaved }) {
           type="date" className="input mb-6"
           value={sentAt} onChange={e => setSentAt(e.target.value)}
         />
+
+        {error && <p className="text-alerta text-sm mb-3">{error}</p>}
 
         <div className="flex gap-2">
           <button onClick={submit} disabled={!name.trim() || saving} className="btn-primario flex-1 disabled:opacity-40">

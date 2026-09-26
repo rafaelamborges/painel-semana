@@ -22,7 +22,7 @@ const navItems = [
 
 export default function Sidebar({ open, onClose }) {
   const { signOut } = useAuth()
-  const { child, children, setActiveChild, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
+  const { child, kids, setActiveChild, reload, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
   const { count: unread } = useUnreadNotifications()
   const navigate = useNavigate()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -116,7 +116,7 @@ export default function Sidebar({ open, onClose }) {
             <div className="min-w-0 flex-1">
               <div className="text-[14px] font-normal text-ink leading-tight truncate">{child.name}</div>
               <div className="text-[12px] font-light text-ink-mute leading-snug">
-                {children.length > 1 ? `${children.length} crianças` : 'Perfil e ajustes'}
+                {kids.length > 1 ? `${kids.length} crianças` : 'Perfil e ajustes'}
               </div>
             </div>
             <svg className={`w-3.5 h-3.5 text-ink-mute flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`}
@@ -130,10 +130,10 @@ export default function Sidebar({ open, onClose }) {
           <>
             <div className="fixed inset-0 z-30" onClick={() => setProfileOpen(false)} />
             <div className="absolute bottom-[calc(100%-8px)] left-3 right-3 z-40 bg-white rounded-xl border border-linha shadow-lg p-2">
-              {children.length > 0 && (
+              {kids.length > 0 && (
                 <>
                   <p className="rotulo px-3 pt-2 pb-1">Trocar de criança</p>
-                  {children.map(k => {
+                  {kids.map(k => {
                     const isActive = k.id === child?.id
                     return (
                       <button
@@ -210,9 +210,8 @@ export default function Sidebar({ open, onClose }) {
           onClose={() => setShowNewChild(false)}
           onCreated={async (newId) => {
             setShowNewChild(false)
-            // Recarrega família e ativa a nova criança
-            await new Promise(r => setTimeout(r, 100))
-            window.location.reload()
+            await reload()
+            await setActiveChild(newId)
           }}
         />
       )}
