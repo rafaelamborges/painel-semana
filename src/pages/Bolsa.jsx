@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
@@ -13,6 +13,8 @@ export default function Bolsa() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPrepare, setShowPrepare] = useState(false)
   const [showAddReturn, setShowAddReturn] = useState(false)
+  const [undoReturn, setUndoReturn] = useState(null) // { shipment, secondsLeft }
+  const undoTimerRef = useRef(null)
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !family || !child) return
@@ -31,6 +33,60 @@ export default function Bolsa() {
   }, [family, child])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => () => { if (undoTimerRef.current) clearInterval(undoTimerRef.current) }, [])
+
+  function clearUndoTimer() {
+    if (undoTimerRef.current) {
+      clearInterval(undoTimerRef.current)
+      undoTimerRef.current = null
+    }
+  }
+
+  async function markReturned(shipment) {
+    // Optimistic: remove da lista + persiste devolução
+    setShipments(prev => prev.filter(s => s.id !== shipment.id))
+    const { error } = await supabase
+      .from('bag_shipments')
+      .update({ returned_at: new Date().toISOString() })
+      .eq('id', shipment.id)
+    if (error) {
+      // Reverte otimismo em caso de erro
+      setShipments(prev => [shipment, ...prev])
+      alert('Não foi possível marcar como devolvido: ' + error.message)
+      return
+    }
+    // Ativa a janela de desfazer por 5s (substitui a anterior, se houver)
+    clearUndoTimer()
+    setUndoReturn({ shipment, secondsLeft: 5 })
+    undoTimerRef.current = setInterval(() => {
+      setUndoReturn(prev => {
+        if (!prev) return prev
+        const next = prev.secondsLeft - 1
+        if (next <= 0) {
+          clearUndoTimer()
+          return null
+        }
+        return { ...prev, secondsLeft: next }
+      })
+    }, 1000)
+  }
+
+  async function undoReturned() {
+    if (!undoReturn) return
+    const { shipment } = undoReturn
+    clearUndoTimer()
+    setUndoReturn(null)
+    const { error } = await supabase
+      .from('bag_shipments')
+      .update({ returned_at: null })
+      .eq('id', shipment.id)
+    if (error) {
+      alert('Não foi possível desfazer: ' + error.message)
+      return
+    }
+    setShipments(prev => [shipment, ...prev.filter(s => s.id !== shipment.id)])
+  }
 
   const nextSwap = useMemo(() => guardPattern ? getNextSwapDate(new Date(), guardPattern) : null, [guardPattern])
   const displayName = child?.name || 'a criança'
@@ -153,10 +209,7 @@ export default function Bolsa() {
                   </div>
                   {permissions.canEdit && (
                     <button
-                      onClick={async () => {
-                        await supabase.from('bag_shipments').update({ returned_at: new Date().toISOString() }).eq('id', s.id)
-                        load()
-                      }}
+                      onClick={() => markReturned(s)}
                       className="btn-texto text-ink-mute"
                       title="Marcar como devolvido"
                     >
@@ -198,6 +251,45 @@ export default function Bolsa() {
           onSaved={() => { setShowAddReturn(false); load() }}
         />
       )}
+
+      {undoReturn && (
+        <UndoToast
+          name={undoReturn.shipment.name}
+          secondsLeft={undoReturn.secondsLeft}
+          onUndo={undoReturned}
+          onDismiss={() => { clearUndoTimer(); setUndoReturn(null) }}
+        />
+      )}
+    </div>
+  )
+}
+
+function UndoToast({ name, secondsLeft, onUndo, onDismiss }) {
+  return (
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-full bg-profundo text-white shadow-xl min-w-[280px] max-w-[92vw]"
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="text-sm truncate flex-1">
+        <span className="font-medium">{name}</span> marcado como devolvido
+      </span>
+      <button
+        onClick={onUndo}
+        className="text-sm font-medium text-white/95 hover:text-white underline underline-offset-2 flex-shrink-0"
+      >
+        Desfazer ({secondsLeft})
+      </button>
+      <button
+        onClick={onDismiss}
+        aria-label="Fechar"
+        className="text-white/60 hover:text-white flex-shrink-0"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   )
 }
