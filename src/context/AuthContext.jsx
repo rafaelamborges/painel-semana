@@ -14,18 +14,46 @@ export function AuthProvider({ children }) {
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let cancelled = false
+
+    // 1. Lê a sessão persistida
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // 2. Se há sessão, força um refresh no boot pra resetar o inactivity
+      //    timer do lado do Supabase — assim cada abertura conta como acesso
+      //    e a janela de 30 dias renova.
+      if (session) {
+        try { await supabase.auth.refreshSession() } catch { /* offline: ignora */ }
+      }
     })
 
+    // 3. Também refresha quando a aba volta do background depois de horas
+    //    (sem isso, o timer só reseta quando o access token de 1h expira)
+    let lastFocusRefresh = Date.now()
+    async function onFocus() {
+      if (document.visibilityState !== 'visible') return
+      // No máximo 1x a cada 6h — evita spam quando a aba fica trocando de foco
+      if (Date.now() - lastFocusRefresh < 6 * 60 * 60 * 1000) return
+      lastFocusRefresh = Date.now()
+      try { await supabase.auth.refreshSession() } catch { /* ignora */ }
+    }
+    document.addEventListener('visibilitychange', onFocus)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return
       setSession(session)
       setUser(session?.user ?? null)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onFocus)
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function signInWithGoogle() {
