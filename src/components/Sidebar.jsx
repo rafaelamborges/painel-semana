@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useFamily } from '../context/FamilyContext'
+import { supabase } from '../lib/supabase'
 import { getGuardForDate } from '../lib/guard'
 import { useUnreadNotifications } from '../lib/useNotifications'
 import { format } from 'date-fns'
@@ -20,9 +22,11 @@ const navItems = [
 
 export default function Sidebar({ open, onClose }) {
   const { signOut } = useAuth()
-  const { child, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
+  const { child, children, setActiveChild, guardPattern, guardianColors, guardianLabels, permissions } = useFamily()
   const { count: unread } = useUnreadNotifications()
   const navigate = useNavigate()
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [showNewChild, setShowNewChild] = useState(false)
 
   const today = new Date()
   const currentGuard = guardPattern ? getGuardForDate(today, guardPattern) : null
@@ -82,7 +86,7 @@ export default function Sidebar({ open, onClose }) {
       </nav>
 
       {/* Rodapé — período atual + criança */}
-      <div className="mt-auto border-t border-linha px-5 pt-5 pb-6">
+      <div className="mt-auto border-t border-linha px-5 pt-5 pb-6 relative">
         {guardColor && (
           <>
             <p className="rotulo mb-3">Período atual</p>
@@ -98,8 +102,10 @@ export default function Sidebar({ open, onClose }) {
 
         {child && (
           <button
-            onClick={() => { onClose?.(); navigate('/admin') }}
-            className="mt-5 min-h-[44px] flex items-center gap-2.5 w-full text-left"
+            onClick={() => setProfileOpen(o => !o)}
+            className="mt-5 min-h-[44px] flex items-center gap-2.5 w-full text-left rounded-lg hover:bg-linha-suave/60 -mx-2 px-2 py-1.5 transition-colors"
+            aria-haspopup="menu"
+            aria-expanded={profileOpen}
           >
             <div className="w-8 h-8 rounded-full bg-nevoa flex-none flex items-center justify-center">
               {child.photo_url
@@ -107,31 +113,109 @@ export default function Sidebar({ open, onClose }) {
                 : <span className="text-[13px] font-medium text-bussola">{child.name?.[0]?.toUpperCase() || '·'}</span>
               }
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-[14px] font-normal text-ink leading-tight truncate">{child.name}</div>
-              <div className="text-[12px] font-light text-ink-mute leading-snug">Perfil e acessos</div>
+              <div className="text-[12px] font-light text-ink-mute leading-snug">
+                {children.length > 1 ? `${children.length} crianças` : 'Perfil e ajustes'}
+              </div>
             </div>
+            <svg className={`w-3.5 h-3.5 text-ink-mute flex-shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 15l-7-7-7 7" />
+            </svg>
           </button>
         )}
 
-        {permissions?.canManageUsers && (
-          <NavLink
-            to="/admin"
-            onClick={onClose}
-            className={({ isActive }) => `nav-item mt-3${isActive ? ' nav-item-active' : ''}`}
-          >
-            <IconResponsaveis className="w-4 h-4 flex-shrink-0" />
-            Responsáveis
-          </NavLink>
+        {profileOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setProfileOpen(false)} />
+            <div className="absolute bottom-[calc(100%-8px)] left-3 right-3 z-40 bg-white rounded-xl border border-linha shadow-lg p-2">
+              {children.length > 0 && (
+                <>
+                  <p className="rotulo px-3 pt-2 pb-1">Trocar de criança</p>
+                  {children.map(k => {
+                    const isActive = k.id === child?.id
+                    return (
+                      <button
+                        key={k.id}
+                        onClick={() => { setActiveChild(k.id); setProfileOpen(false) }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-nevoa text-left transition-colors"
+                      >
+                        <span className="w-7 h-7 rounded-full bg-nevoa flex items-center justify-center text-[12px] font-medium text-bussola flex-shrink-0">
+                          {k.name?.[0]?.toUpperCase() || '·'}
+                        </span>
+                        <span className="flex-1 text-[14px] text-ink truncate">{k.name}</span>
+                        {isActive && (
+                          <svg className="w-4 h-4 text-bussola flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.4}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+
+              {permissions?.canAdd && (
+                <button
+                  onClick={() => { setProfileOpen(false); setShowNewChild(true) }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-nevoa text-left transition-colors text-bussola"
+                >
+                  <span className="w-7 h-7 rounded-full bg-bussola-wash flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.4}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                  <span className="text-[14px] font-medium">Adicionar criança</span>
+                </button>
+              )}
+
+              <div className="h-px bg-linha my-1.5" />
+
+              <NavLink
+                to="/preferencias"
+                onClick={() => { setProfileOpen(false); onClose?.() }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-nevoa text-left transition-colors text-ink"
+              >
+                <IconAlertas className="w-4 h-4 flex-shrink-0" />
+                <span className="text-[14px]">Preferências de notificação</span>
+              </NavLink>
+
+              {permissions?.canManageUsers && (
+                <NavLink
+                  to="/admin"
+                  onClick={() => { setProfileOpen(false); onClose?.() }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-nevoa text-left transition-colors text-ink"
+                >
+                  <IconResponsaveis className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-[14px]">Responsáveis</span>
+                </NavLink>
+              )}
+
+              <button
+                onClick={() => { setProfileOpen(false); handleSignOut() }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-alerta/10 text-left transition-colors text-alerta"
+              >
+                <IconSair className="w-4 h-4 flex-shrink-0" />
+                <span className="text-[14px] font-medium">Sair</span>
+              </button>
+            </div>
+          </>
         )}
-        <button
-          onClick={handleSignOut}
-          className="nav-item w-full mt-1 hover:bg-alerta/10 hover:text-alerta"
-        >
-          <IconSair className="w-4 h-4 flex-shrink-0" />
-          Sair
-        </button>
       </div>
+
+      {showNewChild && (
+        <NewChildForm
+          familyId={child ? child.family_id : null}
+          onClose={() => setShowNewChild(false)}
+          onCreated={async (newId) => {
+            setShowNewChild(false)
+            // Recarrega família e ativa a nova criança
+            await new Promise(r => setTimeout(r, 100))
+            window.location.reload()
+          }}
+        />
+      )}
     </aside>
   )
 }
@@ -241,5 +325,81 @@ function IconSair({ className }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
     </svg>
+  )
+}
+
+function NewChildForm({ familyId, onClose, onCreated }) {
+  const [name, setName] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [school, setSchool] = useState('')
+  const [grade, setGrade] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save(e) {
+    e.preventDefault()
+    if (!familyId) { setError('Família não carregada.'); return }
+    setSaving(true)
+    setError('')
+    const { data, error: err } = await supabase
+      .from('children')
+      .insert({
+        family_id: familyId,
+        name: name.trim(),
+        birth_date: birthDate || null,
+        school: school.trim() || null,
+        grade: grade.trim() || null,
+      })
+      .select()
+      .single()
+    if (err) { setError(err.message); setSaving(false); return }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(`compasso.active-child.${familyId}`, data.id)
+    }
+    onCreated?.(data.id)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-ink">Adicionar criança</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-nevoa">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-sm text-ink-mute mb-4">
+          A nova criança compartilha os mesmos membros da família. Configure a rotina de guarda depois pela Agenda.
+        </p>
+        <form onSubmit={save} className="space-y-3">
+          <div>
+            <label className="input-label">Nome</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} required
+              className="input" placeholder="Nome da criança" autoFocus />
+          </div>
+          <div>
+            <label className="input-label">Data de nascimento</label>
+            <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="input-label">Escola (opcional)</label>
+            <input type="text" value={school} onChange={e => setSchool(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="input-label">Turma / Ano (opcional)</label>
+            <input type="text" value={grade} onChange={e => setGrade(e.target.value)} className="input" />
+          </div>
+          {error && <p className="text-alerta text-sm">{error}</p>}
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="btn-secundario flex-1">Cancelar</button>
+            <button type="submit" disabled={saving || !name.trim()} className="btn-primario flex-1 disabled:opacity-50">
+              {saving ? 'Salvando…' : 'Adicionar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
