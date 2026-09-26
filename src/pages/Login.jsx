@@ -57,9 +57,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <p className="rotulo mb-4">Olá!</p>
-          <h1 className="font-display leading-[1.06] tracking-[-0.035em] text-ink" style={{ fontSize: 'clamp(30px,4.6vw,44px)', fontWeight: 200 }}>
-            Duas casas.<br />
-            <em className="italic font-semibold">Uma só criança.</em>
+          <h1 className="font-display leading-[1.06] tracking-[-0.035em] text-ink" style={{ fontSize: 'clamp(26px,3.8vw,38px)', fontWeight: 200 }}>
+            Organizando o cuidado das crianças com <em className="italic font-semibold">leveza e alinhamento</em>.
           </h1>
         </div>
 
