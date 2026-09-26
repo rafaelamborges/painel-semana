@@ -38,8 +38,12 @@ export function AuthProvider({ children }) {
       if (document.visibilityState !== 'visible') return
       // No máximo 1x a cada 6h — evita spam quando a aba fica trocando de foco
       if (Date.now() - lastFocusRefresh < 6 * 60 * 60 * 1000) return
-      lastFocusRefresh = Date.now()
-      try { await supabase.auth.refreshSession() } catch { /* ignora */ }
+      try {
+        await supabase.auth.refreshSession()
+        lastFocusRefresh = Date.now()
+      } catch {
+        // Offline ou falha transient: não atualiza o timer pra permitir retry logo
+      }
     }
     document.addEventListener('visibilitychange', onFocus)
 

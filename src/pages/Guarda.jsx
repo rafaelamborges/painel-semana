@@ -82,7 +82,8 @@ export default function Guarda() {
   }
 
   async function deleteEvent(id) {
-    await supabase.from('calendar_events').delete().eq('id', id)
+    const { error } = await supabase.from('calendar_events').delete().eq('id', id)
+    if (error) { alert('Não foi possível remover: ' + error.message); return }
     loadEvents()
   }
 

@@ -12,11 +12,11 @@ function hexToRgba(hex, alpha = 0.15) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-export function FamilyProvider({ children: reactChildren }) {
+export function FamilyProvider({ children }) {
   const { user } = useAuth()
   const [family, setFamily] = useState(null)
   const [child, setChild] = useState(null)
-  const [childrenList, setChildrenList] = useState([])
+  const [kids, setKids] = useState([])
   const [members, setMembers] = useState([])
   const [guardPattern, setGuardPattern] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -83,21 +83,21 @@ export function FamilyProvider({ children: reactChildren }) {
       setMembers(allMembers || [])
 
       // Load todas as crianças da família
-      const { data: kidsData } = await supabase
+      const { data: kidsRows } = await supabase
         .from('children')
         .select('*')
         .eq('family_id', familyId)
         .order('created_at', { ascending: true })
 
-      const kids = kidsData || []
-      setChildrenList(kids)
+      const kidsData = kidsRows || []
+      setKids(kidsData)
 
-      if (kids.length) {
+      if (kidsData.length) {
         // Recupera qual criança estava ativa (por família) do localStorage
         const stored = typeof window !== 'undefined'
           ? window.localStorage.getItem(`compasso.active-child.${familyId}`)
           : null
-        const chosen = kids.find(k => k.id === stored) || kids[0]
+        const chosen = kidsData.find(k => k.id === stored) || kidsData[0]
         setChild(chosen)
 
         // Load guard pattern da criança escolhida
@@ -132,7 +132,7 @@ export function FamilyProvider({ children: reactChildren }) {
   }
 
   async function setActiveChild(childId) {
-    const chosen = childrenList.find(k => k.id === childId)
+    const chosen = kids.find(k => k.id === childId)
     if (!chosen || !family) return
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(`compasso.active-child.${family.id}`, chosen.id)
@@ -150,7 +150,7 @@ export function FamilyProvider({ children: reactChildren }) {
     <FamilyContext.Provider value={{
       family,
       child,
-      children: childrenList,
+      kids,
       setActiveChild,
       members,
       guardPattern,
@@ -165,7 +165,7 @@ export function FamilyProvider({ children: reactChildren }) {
       myAccessRole,
       permissions,
     }}>
-      {reactChildren}
+      {children}
     </FamilyContext.Provider>
   )
 }

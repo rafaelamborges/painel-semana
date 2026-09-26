@@ -102,7 +102,7 @@ export default function Dashboard() {
           </h1>
         )}
         <div className="flex flex-wrap gap-3 mt-8">
-          <Link to="/guarda" className="btn-primario">Propor troca de período</Link>
+          <Link to="/agenda" className="btn-primario">Propor troca de período</Link>
           <Link to="/saude" className="btn-secundario">Registrar consulta</Link>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
           <div className="card">
             <div className="flex items-baseline justify-between mb-4 gap-3">
               <p className="rotulo">Próxima troca</p>
-              <Link to="/guarda" className="btn-texto">Editar</Link>
+              <Link to="/agenda" className="btn-texto">Editar</Link>
             </div>
             <p className="text-[17px] font-light leading-snug text-ink-body">
               {format(proximaTroca, "EEEE, dd/MM", { locale: ptBR })} às {switchTime}.

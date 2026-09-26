@@ -43,7 +43,7 @@ export default function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="agenda" element={<Agenda />} />
-              <Route path="guarda" element={<Navigate to="/agenda?tab=rotina" replace />} />
+              <Route path="guarda" element={<Navigate to="/agenda" replace />} />
               <Route path="saude" element={<Saude />} />
               <Route path="decisoes" element={<Decisoes />} />
               <Route path="lembretes" element={<Lembretes />} />
