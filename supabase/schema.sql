@@ -438,6 +438,8 @@ create policy "write sensitive profile" on public.children_profile for all
       where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','admin','editor')
     )
   );
+grant select, insert, update, delete on public.children_profile to authenticated;
+grant all on public.children_profile to service_role;
 
 -- Hardening: revoga EXECUTE público das SECURITY DEFINER usadas nas RLS
 revoke execute on function public.get_my_family_id() from public;
@@ -473,6 +475,8 @@ create policy "read own audit" on public.audit_log for select
     )
   );
 revoke insert, update, delete on public.audit_log from public, anon, authenticated;
+grant select on public.audit_log to authenticated;
+grant all on public.audit_log to service_role;
 
 -- Triggers de audit e jobs de retenção são criados via migrations
 -- versionadas (não replicados aqui pra evitar drift).
