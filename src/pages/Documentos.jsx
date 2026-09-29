@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { EmptyState, EmptyDocuments } from '../components/illustrations'
-import { PerfilAtalhoCard } from './Perfil'
+import PerfilAtalhoCard from '../components/PerfilAtalhoCard'
 
 const MAX_DOCS = 20
 const MAX_SIZE_MB = 10

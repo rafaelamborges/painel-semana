@@ -357,6 +357,7 @@ create policy "expense_settlements_all" on public.expense_settlements for all
 
 alter table public.family_members add column if not exists role_label text;
 alter table public.guard_patterns add column if not exists switch_time time default '08:00';
+alter table public.children add column if not exists profile jsonb default '{}'::jsonb;
 
 -- ─────────────────────────────────────────────────────────────
 -- Notificações (inbox por destinatário + preferências por membro)
