@@ -155,6 +155,164 @@ export default function Preferencias() {
           {saving ? 'Salvando…' : 'Salvar preferências'}
         </button>
       </div>
+
+      <PrivacyPanel me={me} />
+    </div>
+  )
+}
+
+function PrivacyPanel({ me }) {
+  const [exporting, setExporting] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [showDelete, setShowDelete] = useState(false)
+
+  async function exportData() {
+    setMsg('')
+    setExporting(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-family-data`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+      if (!res.ok) throw new Error((await res.json()).error || 'Falha na exportação')
+      // Baixa como arquivo
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `compasso-dados-${new Date().toISOString().slice(0,10)}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setMsg('Dados baixados com sucesso.')
+    } catch (e) {
+      setMsg('Erro: ' + (e.message || e))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const isSysadmin = me?.access_role === 'sysadmin'
+
+  return (
+    <>
+      <div className="mt-10 pt-8 border-t border-linha">
+        <h2 className="page-title" style={{ fontSize: '22px' }}>Seus dados</h2>
+        <p className="corpo mt-2">
+          Você tem direito à cópia dos seus dados e a solicitar sua exclusão a qualquer momento (LGPD, Art. 18).
+        </p>
+
+        <div className="card mt-5" style={{ padding: '18px 22px' }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-medium text-ink">Baixar meus dados</p>
+              <p className="apoio mt-1">
+                Gera um arquivo JSON com tudo relacionado à sua família (agenda, saúde, despesas, documentos, decisões, notificações).
+              </p>
+            </div>
+            <button onClick={exportData} disabled={exporting} className="btn-secundario">
+              {exporting ? 'Preparando…' : 'Baixar JSON'}
+            </button>
+          </div>
+        </div>
+
+        {isSysadmin && (
+          <div className="card mt-3" style={{ padding: '18px 22px', borderColor: '#FEE4E5' }}>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-medium text-alerta">Excluir família e todos os dados</p>
+                <p className="apoio mt-1">
+                  Apaga permanentemente a família, todos os membros, criança(s), histórico de saúde, documentos, despesas, decisões e arquivos. <strong>Não tem volta.</strong> Só quem é sysadmin da família pode fazer isso.
+                </p>
+              </div>
+              <button onClick={() => setShowDelete(true)} className="btn-secundario" style={{ borderColor: '#FEE4E5', color: '#B91C1C' }}>
+                Excluir tudo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {msg && <p className="mt-3 text-sm text-ink-mute">{msg}</p>}
+      </div>
+
+      {showDelete && <DeleteFamilyModal onClose={() => setShowDelete(false)} />}
+    </>
+  )
+}
+
+function DeleteFamilyModal({ onClose }) {
+  const [confirm, setConfirm] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function doDelete() {
+    setError('')
+    setBusy(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-family`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ confirm: 'EXCLUIR TUDO' }),
+        }
+      )
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || 'Falha na exclusão')
+      }
+      // Sai da sessão e volta pro login
+      await supabase.auth.signOut()
+      window.location.href = '/login'
+    } catch (e) {
+      setError(e.message || String(e))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-ink text-[18px]">Excluir família e todos os dados</h3>
+        <p className="corpo mt-3">
+          Isso apaga permanentemente todos os dados desta família — inclusive documentos, comprovantes, fotos e histórico. <strong>Não pode ser desfeito.</strong>
+        </p>
+        <p className="text-sm text-ink mt-4">
+          Pra confirmar, digite <strong>EXCLUIR TUDO</strong> no campo abaixo:
+        </p>
+        <input
+          type="text"
+          value={confirm}
+          onChange={e => setConfirm(e.target.value)}
+          placeholder="EXCLUIR TUDO"
+          className="input mt-2"
+          autoFocus
+        />
+        {error && <p className="text-alerta text-sm mt-3">{error}</p>}
+        <div className="flex gap-2 mt-6">
+          <button onClick={onClose} className="btn-secundario flex-1" disabled={busy}>Cancelar</button>
+          <button
+            onClick={doDelete}
+            disabled={confirm !== 'EXCLUIR TUDO' || busy}
+            className="btn-primario flex-1 disabled:opacity-40"
+            style={{ background: '#B91C1C' }}
+          >
+            {busy ? 'Excluindo…' : 'Confirmar exclusão'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
