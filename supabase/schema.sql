@@ -357,7 +357,7 @@ create policy "expense_settlements_all" on public.expense_settlements for all
 
 alter table public.family_members add column if not exists role_label text;
 alter table public.guard_patterns add column if not exists switch_time time default '08:00';
-alter table public.children add column if not exists profile jsonb default '{}'::jsonb;
+-- children.profile foi movido pra tabela children_profile (RLS restrita a editor+)
 
 -- ─────────────────────────────────────────────────────────────
 -- Notificações (inbox por destinatário + preferências por membro)
@@ -404,3 +404,45 @@ create policy "update own notifications" on public.notifications for update
 
 -- Fanout triggers, dispatch via pg_net e cron jobs vivem em migrações
 -- versionadas do Supabase — não replicados aqui para evitar drift.
+
+-- ─────────────────────────────────────────────────────────────
+-- Perfil sensível da criança (RLS restrita a editor+)
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.children_profile (
+  child_id uuid primary key references public.children(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.children_profile enable row level security;
+create policy "read sensitive profile" on public.children_profile for select
+  using (
+    child_id in (
+      select c.id from public.children c
+      join public.family_members fm on fm.family_id = c.family_id
+      where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','admin','editor')
+    )
+  );
+create policy "write sensitive profile" on public.children_profile for all
+  using (
+    child_id in (
+      select c.id from public.children c
+      join public.family_members fm on fm.family_id = c.family_id
+      where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','admin','editor')
+    )
+  )
+  with check (
+    child_id in (
+      select c.id from public.children c
+      join public.family_members fm on fm.family_id = c.family_id
+      where fm.user_id = auth.uid() and fm.access_role in ('sysadmin','admin','editor')
+    )
+  );
+
+-- Hardening: revoga EXECUTE público das SECURITY DEFINER usadas nas RLS
+revoke execute on function public.get_my_family_id() from public;
+revoke execute on function public.get_my_family_id() from anon;
+grant execute on function public.get_my_family_id() to authenticated, service_role;
+revoke execute on function public.is_family_editor(uuid) from public;
+revoke execute on function public.is_family_editor(uuid) from anon;
+grant execute on function public.is_family_editor(uuid) to authenticated, service_role;

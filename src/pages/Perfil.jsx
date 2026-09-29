@@ -15,7 +15,7 @@ const SHIFTS = [
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 export default function Perfil() {
-  const { child, permissions, reload } = useFamily()
+  const { child, permissions, sensitiveProfile, reload } = useFamily()
   const [profile, setProfile] = useState({})
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -26,22 +26,21 @@ export default function Perfil() {
   // e sai do modo de edição pra não escrever no perfil errado.
   useEffect(() => {
     if (!isSupabaseConfigured || !child) { setLoading(false); return }
-    setProfile(child.profile || {})
+    setProfile(sensitiveProfile || {})
     setEditing(false)
     setError('')
     setLoading(false)
-  }, [child?.id])
+  }, [child?.id, sensitiveProfile])
 
   async function save() {
     if (!child) return
     setSaving(true)
     setError('')
     const { error: err } = await supabase
-      .from('children')
-      .update({ profile })
-      .eq('id', child.id)
+      .from('children_profile')
+      .upsert({ child_id: child.id, data: profile, updated_at: new Date().toISOString() })
     if (err) { setError(err.message); setSaving(false); return }
-    // Recarrega o context pra atualizar child.profile e os atalhos (Home, Documentos)
+    // Recarrega o context pra atualizar sensitiveProfile e os atalhos
     await reload()
     setSaving(false)
     setEditing(false)
@@ -52,11 +51,35 @@ export default function Perfil() {
   }
 
   const canEdit = permissions?.canEdit || permissions?.canAdd
+  // sensitiveProfile null significa que RLS bloqueou a leitura (usuário
+  // não tem role editor+ na família) — mostra estado de acesso restrito
+  const noAccess = sensitiveProfile === null
 
   if (loading) return <div className="max-w-3xl mx-auto"><div className="esqueleto h-40" /></div>
   if (!child) return (
     <div className="max-w-3xl mx-auto">
       <p className="corpo">Cadastre a criança no onboarding antes de preencher o perfil.</p>
+    </div>
+  )
+  if (noAccess) return (
+    <div className="max-w-3xl mx-auto">
+      <div className="mb-6">
+        <p className="rotulo mb-2">Cartão da criança</p>
+        <h1 className="page-title">Perfil de {child.name}</h1>
+      </div>
+      <div className="card py-10 text-center">
+        <div className="w-12 h-12 rounded-full bg-nevoa mx-auto mb-4 flex items-center justify-center">
+          <svg className="w-6 h-6 text-ink-mute" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <p className="font-display leading-[1.1]" style={{ fontSize: '22px', fontWeight: 300 }}>
+          Dados sensíveis <em className="italic font-semibold">restritos</em>.
+        </p>
+        <p className="corpo mt-3">
+          O cartão da criança (CPF, RG, plano de saúde, contato de emergência) fica visível apenas para membros da família com permissão de <strong>edição</strong> ou superior.
+        </p>
+      </div>
     </div>
   )
 

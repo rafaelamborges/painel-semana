@@ -1,9 +1,17 @@
 import { Link } from 'react-router-dom'
+import { useFamily } from '../context/FamilyContext'
 
 // Card compacto de atalho usado em Home e Documentos.
 // Vive em componentes/ pra que os consumers não puxem o arquivo inteiro de Perfil.
-export default function PerfilAtalhoCard({ child, profile }) {
-  const p = profile || child?.profile || {}
+export default function PerfilAtalhoCard() {
+  const { child, sensitiveProfile } = useFamily()
+  if (!child) return null
+
+  // Se o usuário não tem acesso (RLS bloqueou), esconde o atalho —
+  // não faz sentido mostrar contagem de dados que ele não pode ver
+  if (sensitiveProfile === null) return null
+
+  const p = sensitiveProfile || {}
   const filled = [
     p.full_name, p.cpf, p.blood_type, p.emergency_hospital,
     p.health_plan_operator, p.emergency_contact_name,
@@ -23,7 +31,7 @@ export default function PerfilAtalhoCard({ child, profile }) {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-medium text-ink">Perfil de {child?.name}</p>
+          <p className="text-[15px] font-medium text-ink">Perfil de {child.name}</p>
           <p className="apoio mt-0.5">
             {filled === total
               ? 'Cartão completo — pronto pra emergência'

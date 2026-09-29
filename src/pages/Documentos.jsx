@@ -142,7 +142,7 @@ export default function Documentos() {
 
       {child && (
         <div className="mb-6">
-          <PerfilAtalhoCard child={child} profile={child.profile} />
+          <PerfilAtalhoCard />
         </div>
       )}
 
