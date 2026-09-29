@@ -19,6 +19,7 @@ export function FamilyProvider({ children }) {
   const [kids, setKids] = useState([])
   const [members, setMembers] = useState([])
   const [guardPattern, setGuardPattern] = useState(null)
+  const [sensitiveProfile, setSensitiveProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [onboardingDone, setOnboardingDone] = useState(null)
 
@@ -108,9 +109,20 @@ export function FamilyProvider({ children }) {
           .maybeSingle()
 
         setGuardPattern(pattern || null)
+
+        // Perfil sensível: RLS filtra automaticamente se o usuário
+        // não tiver role editor+ (retorna null com maybeSingle())
+        const { data: sp } = await supabase
+          .from('children_profile')
+          .select('data')
+          .eq('child_id', chosen.id)
+          .maybeSingle()
+
+        setSensitiveProfile(sp?.data || {})
       } else {
         setChild(null)
         setGuardPattern(null)
+        setSensitiveProfile(null)
       }
     } catch (err) {
       console.error('Error loading family:', err)
@@ -144,6 +156,12 @@ export function FamilyProvider({ children }) {
       .eq('child_id', chosen.id)
       .maybeSingle()
     setGuardPattern(pattern || null)
+    const { data: sp } = await supabase
+      .from('children_profile')
+      .select('data')
+      .eq('child_id', chosen.id)
+      .maybeSingle()
+    setSensitiveProfile(sp?.data || {})
   }
 
   return (
@@ -154,6 +172,7 @@ export function FamilyProvider({ children }) {
       setActiveChild,
       members,
       guardPattern,
+      sensitiveProfile,
       loading,
       onboardingDone,
       reload: loadFamily,

@@ -123,7 +123,7 @@ export default function Dashboard() {
 
       {child && (
         <div className="mb-2">
-          <PerfilAtalhoCard child={child} profile={child.profile} />
+          <PerfilAtalhoCard />
         </div>
       )}
 
