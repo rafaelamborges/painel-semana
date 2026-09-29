@@ -7,7 +7,7 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
-import { PerfilAtalhoCard } from './Perfil'
+import PerfilAtalhoCard from '../components/PerfilAtalhoCard'
 
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
