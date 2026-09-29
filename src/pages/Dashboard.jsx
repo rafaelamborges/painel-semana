@@ -7,6 +7,7 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
+import { PerfilAtalhoCard } from './Perfil'
 
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
@@ -118,6 +119,12 @@ export default function Dashboard() {
           </p>
           <span className="btn-texto mt-3">Preparar bolsa →</span>
         </Link>
+      )}
+
+      {child && (
+        <div className="mb-2">
+          <PerfilAtalhoCard child={child} profile={child.profile} />
+        </div>
       )}
 
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
