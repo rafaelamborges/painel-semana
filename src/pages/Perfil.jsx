@@ -95,7 +95,7 @@ export default function Perfil() {
         )}
         {editing && (
           <div className="flex gap-2">
-            <button onClick={() => { setProfile(child.profile || {}); setEditing(false) }} className="btn-secundario">Cancelar</button>
+            <button onClick={() => { setProfile(sensitiveProfile || {}); setEditing(false); setError('') }} className="btn-secundario">Cancelar</button>
             <button onClick={save} disabled={saving} className="btn-primario">
               {saving ? 'Salvando…' : 'Salvar'}
             </button>
