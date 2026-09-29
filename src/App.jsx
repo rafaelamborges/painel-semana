@@ -18,6 +18,7 @@ import Bolsa from './pages/Bolsa'
 import Despesas from './pages/Despesas'
 import Notificacoes from './pages/Notificacoes'
 import Preferencias from './pages/Preferencias'
+import Perfil from './pages/Perfil'
 import Privacidade from './pages/Privacidade'
 import Termos from './pages/Termos'
 
@@ -53,6 +54,7 @@ export default function App() {
               <Route path="despesas" element={<Despesas />} />
               <Route path="notificacoes" element={<Notificacoes />} />
               <Route path="preferencias" element={<Preferencias />} />
+              <Route path="perfil" element={<Perfil />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

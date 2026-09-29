@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { EmptyState, EmptyDocuments } from '../components/illustrations'
+import { PerfilAtalhoCard } from './Perfil'
 
 const MAX_DOCS = 20
 const MAX_SIZE_MB = 10
@@ -138,6 +139,12 @@ export default function Documentos() {
           <button onClick={() => setShowUpload(true)} className="btn-primario">Adicionar</button>
         )}
       </div>
+
+      {child && (
+        <div className="mb-6">
+          <PerfilAtalhoCard child={child} profile={child.profile} />
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
