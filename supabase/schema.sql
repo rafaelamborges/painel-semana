@@ -446,3 +446,33 @@ grant execute on function public.get_my_family_id() to authenticated, service_ro
 revoke execute on function public.is_family_editor(uuid) from public;
 revoke execute on function public.is_family_editor(uuid) from anon;
 grant execute on function public.is_family_editor(uuid) to authenticated, service_role;
+
+-- ─────────────────────────────────────────────────────────────
+-- Audit log LGPD (mutações + exports + delete_family)
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.audit_log (
+  id bigserial primary key,
+  user_id uuid,
+  family_id uuid,
+  action text not null,
+  entity_type text not null,
+  entity_id uuid,
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+create index if not exists audit_log_user_time_idx on public.audit_log(user_id, created_at desc);
+create index if not exists audit_log_family_time_idx on public.audit_log(family_id, created_at desc);
+alter table public.audit_log enable row level security;
+create policy "read own audit" on public.audit_log for select
+  using (
+    user_id = auth.uid()
+    or family_id in (
+      select family_id from public.family_members
+      where user_id = auth.uid() and access_role in ('sysadmin','admin')
+    )
+  );
+revoke insert, update, delete on public.audit_log from public, anon, authenticated;
+
+-- Triggers de audit e jobs de retenção são criados via migrations
+-- versionadas (não replicados aqui pra evitar drift).
