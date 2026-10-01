@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { humanizeError } from '../lib/errors'
 
 export default function Login() {
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth()
@@ -21,7 +22,15 @@ export default function Login() {
     setError('')
     setLoading(true)
     const { error } = await signInWithGoogle()
-    if (error) setError(error.message)
+    if (error) {
+      // OAuth cancelado tem mensagens tipo "popup closed" ou "access denied"
+      const msg = (error.message || '').toLowerCase()
+      if (msg.includes('closed') || msg.includes('canceled') || msg.includes('cancelled')) {
+        setError('O login com Google não completou.')
+      } else {
+        setError(humanizeError(error))
+      }
+    }
     setLoading(false)
   }
 
@@ -32,13 +41,13 @@ export default function Login() {
 
     if (mode === 'login') {
       const { error } = await signInWithEmail(email, password)
-      if (error) setError(error.message)
+      if (error) setError(humanizeError(error))
     } else {
       const { error } = await signUpWithEmail(email, password)
       if (error) {
-        setError(error.message)
+        setError(humanizeError(error))
       } else {
-        setMessage('Verifique seu email para confirmar o cadastro.')
+        setMessage('Verifique seu email pra confirmar o cadastro.')
       }
     }
     setLoading(false)
