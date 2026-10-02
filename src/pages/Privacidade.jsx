@@ -64,7 +64,7 @@ export default function Privacidade() {
             <section id="quem-somos">
               <h2 className="text-xl font-bold text-gray-900 mb-3">1. Quem somos</h2>
               <p>
-                O Compasso é operado no domínio <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>. A pessoa responsável pelo tratamento de dados pessoais — a <strong>Controladora</strong>, para fins da LGPD — é identificada na seção 14 desta política.
+                O Compasso é operado no domínio <a href="https://familiaemcompasso.com.br" className="text-brand-600 hover:underline">familiaemcompasso.com.br</a>. A pessoa responsável pelo tratamento de dados pessoais — a <strong>Controladora</strong>, para fins da LGPD — é identificada na seção 14 desta política.
               </p>
             </section>
 
@@ -250,7 +250,7 @@ export default function Privacidade() {
             <section id="contato">
               <h2 className="text-xl font-bold text-gray-900 mb-3">14. Encarregado (DPO) e contato</h2>
               <p>
-                As informações da Controladora e do Encarregado (DPO) pelo tratamento de dados pessoais serão informadas em breve nesta seção. Enquanto isso, o site oficial permanece em <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>.
+                As informações da Controladora e do Encarregado (DPO) pelo tratamento de dados pessoais serão informadas em breve nesta seção. Enquanto isso, o site oficial permanece em <a href="https://familiaemcompasso.com.br" className="text-brand-600 hover:underline">familiaemcompasso.com.br</a>.
               </p>
               <p className="mt-4">
                 Você também pode entrar em contato com a <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong> em <a href="https://www.gov.br/anpd" className="text-brand-600 hover:underline" target="_blank" rel="noopener noreferrer">www.gov.br/anpd</a>.

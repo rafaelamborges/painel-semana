@@ -44,7 +44,7 @@ export default function Termos() {
 
           <div className="bg-brand-50/60 border border-brand-100 rounded-xl p-4 mb-8">
             <p className="text-sm text-gray-700 leading-relaxed">
-              Estes Termos regulam o uso do <strong>Compasso</strong>, aplicativo web disponível em <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a>. Ao criar uma conta ou usar o serviço, você concorda com o que está escrito aqui.
+              Estes Termos regulam o uso do <strong>Compasso</strong>, aplicativo web disponível em <a href="https://familiaemcompasso.com.br" className="text-brand-600 hover:underline">familiaemcompasso.com.br</a>. Ao criar uma conta ou usar o serviço, você concorda com o que está escrito aqui.
             </p>
           </div>
 
@@ -219,7 +219,7 @@ export default function Termos() {
               <h2 className="text-xl font-bold text-gray-900 mb-3">15. Contato</h2>
               <div className="mt-2 border border-gray-100 rounded-xl p-4 bg-gray-50/60">
                 <p>As informações da Controladora e do canal de contato serão publicadas nesta seção em breve.</p>
-                <p className="mt-2">Site: <a href="https://www.familiaemcompasso.com.br" className="text-brand-600 hover:underline">www.familiaemcompasso.com.br</a></p>
+                <p className="mt-2">Site: <a href="https://familiaemcompasso.com.br" className="text-brand-600 hover:underline">familiaemcompasso.com.br</a></p>
               </div>
             </section>
 
