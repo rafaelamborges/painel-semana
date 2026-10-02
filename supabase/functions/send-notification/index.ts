@@ -5,7 +5,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const MAIL_FROM = Deno.env.get('MAIL_FROM') || 'Compasso <ola@familiaemcompasso.com.br>'
-const APP_URL = Deno.env.get('APP_URL') || 'https://www.familiaemcompasso.com.br'
+const APP_URL = Deno.env.get('APP_URL') || 'https://familiaemcompasso.com.br'
 
 const ENTITY_PATH: Record<string, string> = {
   guard_swap:    '/guarda',
