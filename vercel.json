@@ -2,6 +2,30 @@
   "rewrites": [
     { "source": "/privacidade", "destination": "/privacidade/index.html" },
     { "source": "/termos", "destination": "/termos/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!\\.well-known/|sw\\.js|manifest\\.webmanifest|icon-|compass|favicon|apple-touch-icon).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    }
   ]
 }

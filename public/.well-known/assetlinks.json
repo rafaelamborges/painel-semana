@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.familiaemcompasso.app",
+      "sha256_cert_fingerprints": [
+        "SUBSTITUIR_PELA_FINGERPRINT_SHA256_DA_CHAVE_APK"
+      ]
+    }
+  }
+]
