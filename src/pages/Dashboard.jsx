@@ -132,6 +132,15 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Calendário em destaque — full width, logo abaixo do perfil */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="section-title">Calendário</h2>
+          <Link to="/agenda" className="btn-texto">Abrir agenda</Link>
+        </div>
+        <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
+      </div>
+
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
         {/* Coluna 1 — Período atual + Próxima troca */}
         <div className="flex flex-col gap-5 min-w-0">
@@ -209,15 +218,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Calendário em destaque — full width abaixo */}
-      <div className="mt-2">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="section-title">Calendário</h2>
-          <Link to="/agenda" className="btn-texto">Abrir agenda</Link>
-        </div>
-        <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
       </div>
     </div>
   )
