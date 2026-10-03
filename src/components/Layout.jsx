@@ -67,7 +67,7 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        <BottomNav />
+        <BottomNav onOpenMenu={() => setSidebarOpen(true)} />
       </div>
     </div>
   )
