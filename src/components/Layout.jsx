@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
 import { useState } from 'react'
@@ -6,8 +6,26 @@ import { useFamily } from '../context/FamilyContext'
 import { getGuardForDate } from '../lib/guard'
 import { useUnreadNotifications } from '../lib/useNotifications'
 
+// Nome amigável de cada seção pra exibir no topbar mobile quando
+// o usuário está fora da home. Fallback vazio pra rotas sem título.
+const SECTION_TITLES = {
+  '/agenda':       'Agenda',
+  '/bolsa':        'Bolsa',
+  '/saude':        'Saúde',
+  '/documentos':   'Documentos',
+  '/decisoes':     'Combinados',
+  '/despesas':     'Despesas',
+  '/notificacoes': 'Notificações',
+  '/perfil':       'Perfil',
+  '/preferencias': 'Preferências',
+  '/admin':        'Responsáveis',
+  '/lembretes':    'Notificações',
+}
+
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
   const { guardPattern, guardianColors, guardianLabels } = useFamily()
   const { count: unread } = useUnreadNotifications()
 
@@ -16,12 +34,21 @@ export default function Layout() {
   const guardColor = currentGuard ? guardianColors[currentGuard] : null
   const guardLabel = currentGuard ? guardianLabels[currentGuard] : null
 
+  const isHome = location.pathname === '/'
+  const sectionTitle = SECTION_TITLES[location.pathname] || ''
+
+  function goBack() {
+    // Se há histórico, volta; senão, home
+    if (window.history.length > 1) navigate(-1)
+    else navigate('/')
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-page">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-profundo/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-profundo/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -29,24 +56,39 @@ export default function Layout() {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Topbar mobile — lockup + guardião + campainha */}
-        <header className="lg:hidden sticky top-0 z-10 bg-white border-b border-linha px-4 py-3.5 flex items-center justify-between gap-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex items-center gap-2 flex-shrink-0"
-            aria-label="Abrir menu"
-          >
-            <div className="w-[22px] h-[22px] rounded-full border-2 border-bussola flex items-center justify-center">
-              <div className="w-[7px] h-[7px] bg-bussola" style={{ transform: 'rotate(45deg)' }} />
-            </div>
-            <span className="font-medium text-[15px] tracking-[-0.01em] text-ink">Compasso</span>
-          </button>
+        {/* Topbar mobile */}
+        <header className="lg:hidden sticky top-0 z-20 bg-white border-b border-linha px-4 py-3.5 flex items-center justify-between gap-3">
+          {isHome ? (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-2 flex-shrink-0"
+              aria-label="Abrir menu"
+            >
+              <div className="w-[22px] h-[22px] rounded-full border-2 border-bussola flex items-center justify-center">
+                <div className="w-[7px] h-[7px] bg-bussola" style={{ transform: 'rotate(45deg)' }} />
+              </div>
+              <span className="font-medium text-[15px] tracking-[-0.01em] text-ink">Compasso</span>
+            </button>
+          ) : (
+            <button
+              onClick={goBack}
+              className="flex items-center gap-2 flex-shrink-0 -ml-2 p-2 rounded-lg hover:bg-nevoa transition-colors"
+              aria-label="Voltar"
+            >
+              <svg className="w-5 h-5 text-ink" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="font-medium text-[15px] tracking-[-0.01em] text-ink truncate">
+                {sectionTitle || 'Voltar'}
+              </span>
+            </button>
+          )}
 
           <div className="flex items-center gap-3 min-w-0">
             {guardColor && (
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: guardColor.hex }} />
-                <span className="text-[13px] font-normal text-ink-soft truncate max-w-[120px]">{guardLabel}</span>
+                <span className="text-[13px] font-normal text-ink-soft truncate max-w-[100px]">{guardLabel}</span>
               </div>
             )}
             <NavLink to="/notificacoes" className="relative p-2 -mr-2 min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0" aria-label="Notificações">
@@ -63,7 +105,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 lg:p-11 lg:pb-11">
+        <main className="flex-1 overflow-y-auto p-4 pb-28 sm:p-6 lg:p-11 lg:pb-11">
           <Outlet />
         </main>
 

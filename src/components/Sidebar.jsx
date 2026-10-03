@@ -17,7 +17,6 @@ const navItems = [
   { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
   { to: '/notificacoes', label: 'Notificações', icon: IconSino,    badge: 'unread' },
-  { to: '/lembretes',    label: 'Alertas',      icon: IconAlertas, showCount: true },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -41,7 +40,7 @@ export default function Sidebar({ open, onClose }) {
   return (
     <aside
       className={`
-        fixed inset-y-0 left-0 z-30 w-[264px] bg-white border-r border-linha flex flex-col
+        fixed inset-y-0 left-0 z-50 w-[264px] bg-white border-r border-linha flex flex-col
         transition-transform duration-200
         lg:static lg:translate-x-0
         ${open ? 'translate-x-0' : '-translate-x-full'}

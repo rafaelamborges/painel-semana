@@ -12,7 +12,6 @@ import Dashboard from './pages/Dashboard'
 import Agenda from './pages/Agenda'
 import Saude from './pages/Saude'
 import Decisoes from './pages/Decisoes'
-import Lembretes from './pages/Lembretes'
 import Documentos from './pages/Documentos'
 import Join from './pages/Join'
 import Admin from './pages/Admin'
@@ -52,7 +51,7 @@ export default function App() {
                 <Route path="guarda" element={<Navigate to="/agenda" replace />} />
                 <Route path="saude" element={<Saude />} />
                 <Route path="decisoes" element={<Decisoes />} />
-                <Route path="lembretes" element={<Lembretes />} />
+                <Route path="lembretes" element={<Navigate to="/notificacoes" replace />} />
                 <Route path="documentos" element={<Documentos />} />
                 <Route path="admin" element={<Admin />} />
                 <Route path="bolsa" element={<Bolsa />} />

@@ -181,10 +181,10 @@ export default function Dashboard() {
             <>
               <div className="flex items-baseline justify-between">
                 <h2 className="section-title">Alertas</h2>
-                <Link to="/lembretes" className="btn-texto">Ver todos</Link>
+                <Link to="/notificacoes" className="btn-texto">Ver todos</Link>
               </div>
               {alertas.map((a, i) => (
-                <Link key={i} to="/lembretes" className="card-link">
+                <Link key={i} to="/notificacoes" className="card-link">
                   <p className={`rotulo mb-2.5 ${a.cor}`}>{a.nivel}</p>
                   <p className="text-[16px] font-light leading-snug text-ink-body">{a.texto}</p>
                 </Link>

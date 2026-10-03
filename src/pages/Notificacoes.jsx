@@ -27,6 +27,16 @@ const ENTITY_PATH = {
   document:      '/documentos',
 }
 
+// Alguns kinds vão pra um lugar mais específico que o entity_type padrão
+const KIND_PATH = {
+  guard_switch_eve:      '/bolsa',   // véspera de troca → preparar bolsa
+  consultation_upcoming: '/agenda',  // consulta amanhã → ver na agenda
+}
+
+function pathFor(n) {
+  return KIND_PATH[n.kind] || ENTITY_PATH[n.entity_type] || '/'
+}
+
 export default function Notificacoes() {
   const { user } = useAuth()
   const [items, setItems] = useState([])
@@ -111,7 +121,7 @@ export default function Notificacoes() {
         <div className="space-y-2">
           {shown.map(n => {
             const meta = KIND_META[n.kind] || { label: n.kind, tone: 'bg-nevoa text-ink-mute' }
-            const path = ENTITY_PATH[n.entity_type] || '/'
+            const path = pathFor(n)
             const linkTo = n.entity_id ? `${path}?highlight=${n.entity_id}` : path
             return (
               <Link

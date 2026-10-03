@@ -8,7 +8,7 @@ const navItems = [
 
 export default function BottomNav({ onOpenMenu }) {
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white border-t border-linha safe-b">
+    <nav className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white border-t border-linha safe-b">
       <div className="flex px-1 py-2">
         {navItems.map(({ to, label, icon: Icon, exact }) => (
           <NavLink
