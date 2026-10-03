@@ -492,3 +492,11 @@ grant all on public.notifications to service_role;
 
 grant select, insert, update, delete on public.notification_preferences to authenticated;
 grant all on public.notification_preferences to service_role;
+
+-- service_role precisa de grant em todas as tabelas pra Edge Functions funcionarem
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+grant all on all functions in schema public to service_role;
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on sequences to service_role;
+alter default privileges in schema public grant all on functions to service_role;
