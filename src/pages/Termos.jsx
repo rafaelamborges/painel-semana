@@ -218,7 +218,7 @@ export default function Termos() {
             <section id="contato">
               <h2 className="text-xl font-bold text-gray-900 mb-3">15. Contato</h2>
               <div className="mt-2 border border-gray-100 rounded-xl p-4 bg-gray-50/60">
-                <p>As informações da Controladora e do canal de contato serão publicadas nesta seção em breve.</p>
+                <p>Dúvidas sobre estes Termos ou sobre o Compasso podem ser enviadas para <a href="mailto:guardaalternada@gmail.com" className="text-brand-600 hover:underline">guardaalternada@gmail.com</a>.</p>
                 <p className="mt-2">Site: <a href="https://familiaemcompasso.com.br" className="text-brand-600 hover:underline">familiaemcompasso.com.br</a></p>
               </div>
             </section>
