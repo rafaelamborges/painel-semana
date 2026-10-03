@@ -109,7 +109,7 @@ export default function Dashboard() {
         )}
         <div className="flex flex-wrap gap-3 mt-8">
           <Link to="/agenda" className="btn-primario">Propor troca de período</Link>
-          <Link to="/saude" className="btn-secundario">Registrar consulta</Link>
+          <Link to="/bolsa" className="btn-secundario">Revisar bolsa</Link>
         </div>
       </div>
 
