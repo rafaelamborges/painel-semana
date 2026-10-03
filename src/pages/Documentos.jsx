@@ -55,6 +55,7 @@ export default function Documentos() {
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [viewer, setViewer] = useState(null)
+  const [renaming, setRenaming] = useState(null)
   const [setupRequired, setSetupRequired] = useState(false)
 
   const loadDocs = useCallback(async () => {
@@ -97,6 +98,28 @@ export default function Documentos() {
     await supabase.storage.from(BUCKET).remove([doc.file_path])
     await supabase.from('child_documents').delete().eq('id', doc.id)
     setDocs(prev => prev.filter(d => d.id !== doc.id))
+    setViewer(v => (v?.doc.id === doc.id ? null : v))
+  }
+
+  async function downloadDoc(doc) {
+    // Pede uma URL assinada curta e força o download
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(doc.file_path, 60, { download: doc.file_name })
+    if (error || !data?.signedUrl) { alert('Não consegui preparar o download. Tente de novo.'); return }
+    const a = document.createElement('a')
+    a.href = data.signedUrl
+    a.download = doc.file_name || doc.name
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
+  async function renameDoc(doc, newName) {
+    const trimmed = (newName || '').trim()
+    if (!trimmed || trimmed === doc.name) return
+    const { error } = await supabase.from('child_documents').update({ name: trimmed }).eq('id', doc.id)
+    if (error) { alert('Não consegui renomear: ' + error.message); return }
+    setDocs(prev => prev.map(d => (d.id === doc.id ? { ...d, name: trimmed } : d)))
+    setViewer(v => (v?.doc.id === doc.id ? { ...v, doc: { ...v.doc, name: trimmed } } : v))
   }
 
   if (!isSupabaseConfigured) {
@@ -183,7 +206,10 @@ export default function Documentos() {
                 doc={doc}
                 decision={doc.decision_id ? decisionsById[doc.decision_id] : null}
                 onOpen={openViewer}
+                onDownload={downloadDoc}
+                onRename={d => setRenaming(d)}
                 onDelete={deleteDoc}
+                canEdit={permissions.canEdit || permissions.canAdd}
                 canDelete={permissions.canDelete}
               />
             ))}
@@ -206,14 +232,34 @@ export default function Documentos() {
       )}
 
       {viewer && (
-        <Lightbox viewer={viewer} onClose={() => setViewer(null)} />
+        <Lightbox
+          viewer={viewer}
+          onClose={() => setViewer(null)}
+          onDownload={() => downloadDoc(viewer.doc)}
+          onRename={() => setRenaming(viewer.doc)}
+          onDelete={() => deleteDoc(viewer.doc)}
+          canEdit={permissions.canEdit || permissions.canAdd}
+          canDelete={permissions.canDelete}
+        />
+      )}
+
+      {renaming && (
+        <RenameModal
+          doc={renaming}
+          onClose={() => setRenaming(null)}
+          onSave={async newName => {
+            await renameDoc(renaming, newName)
+            setRenaming(null)
+          }}
+        />
       )}
     </div>
   )
 }
 
-function DocCard({ doc, decision, onOpen, onDelete, canDelete }) {
+function DocCard({ doc, decision, onOpen, onDownload, onRename, onDelete, canEdit, canDelete }) {
   const [thumbUrl, setThumbUrl] = useState(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -225,15 +271,14 @@ function DocCard({ doc, decision, onOpen, onDelete, canDelete }) {
     }
   }, [doc])
 
-  async function handleDelete(e) {
-    e.stopPropagation()
+  async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); return }
     setDeleting(true)
     await onDelete(doc)
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow relative">
       {/* Thumbnail area */}
       <div
         className="aspect-square bg-gray-50 relative cursor-pointer overflow-hidden"
@@ -251,7 +296,6 @@ function DocCard({ doc, decision, onOpen, onDelete, canDelete }) {
             <span className="text-[10px] font-bold text-red-400 tracking-widest">PDF</span>
           </div>
         )}
-        {/* Expand overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="bg-white/90 backdrop-blur-sm rounded-full p-2.5 shadow-lg">
@@ -283,38 +327,84 @@ function DocCard({ doc, decision, onOpen, onDelete, canDelete }) {
           <span className="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">
             {doc.file_type === 'pdf' ? 'PDF' : 'Imagem'}
           </span>
-          {canDelete && (confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={e => { e.stopPropagation(); setConfirmDelete(false) }}
-                className="text-[10px] text-gray-400 hover:text-gray-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-[10px] text-red-500 font-semibold hover:text-red-700"
-              >
-                {deleting ? '…' : 'Confirmar'}
-              </button>
-            </div>
-          ) : (
+          <div className="relative">
             <button
-              onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
-              className="text-[10px] text-gray-300 hover:text-red-400 transition-colors font-medium"
+              type="button"
+              onClick={e => { e.stopPropagation(); setMenuOpen(o => !o); setConfirmDelete(false) }}
+              className="p-1 -mr-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+              aria-label="Ações"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
             >
-              Remover
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="5"  cy="12" r="1.6" fill="currentColor" />
+                <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+              </svg>
             </button>
-          ))}
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={e => { e.stopPropagation(); setMenuOpen(false); setConfirmDelete(false) }} />
+                <div
+                  className="absolute right-0 bottom-full mb-1 z-40 bg-white rounded-xl border border-gray-100 shadow-lg py-1 min-w-[160px]"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <MenuItem icon="download" label="Baixar" onClick={() => { onDownload(doc); setMenuOpen(false) }} />
+                  {canEdit && <MenuItem icon="rename" label="Renomear" onClick={() => { onRename(doc); setMenuOpen(false) }} />}
+                  {canDelete && (
+                    confirmDelete ? (
+                      <MenuItem icon="trash" label={deleting ? 'Removendo…' : 'Confirmar remoção'} danger onClick={handleDelete} />
+                    ) : (
+                      <MenuItem icon="trash" label="Remover" danger onClick={handleDelete} />
+                    )
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function Lightbox({ viewer, onClose }) {
+function MenuItem({ icon, label, onClick, danger }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[13px] transition-colors ${
+        danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      <ActionIcon name={icon} className="w-3.5 h-3.5 flex-shrink-0" />
+      {label}
+    </button>
+  )
+}
+
+function ActionIcon({ name, className }) {
+  if (name === 'download') return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+    </svg>
+  )
+  if (name === 'rename') return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5h-5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m-1.5-9.5l3 3L11 15H8v-3l7.5-7.5z" />
+    </svg>
+  )
+  if (name === 'trash') return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16m-10 0V4a1 1 0 011-1h2a1 1 0 011 1v3m2 0v13a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z" />
+    </svg>
+  )
+  return null
+}
+
+function Lightbox({ viewer, onClose, onDownload, onRename, onDelete, canEdit, canDelete }) {
   const { doc, url } = viewer
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose() }
@@ -329,27 +419,64 @@ function Lightbox({ viewer, onClose }) {
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between mb-3 flex-shrink-0"
+        className="flex items-center justify-between mb-3 flex-shrink-0 gap-3"
         onClick={e => e.stopPropagation()}
       >
-        <div>
-          <p className="text-white font-semibold text-sm leading-tight">{doc.name}</p>
+        <div className="min-w-0">
+          <p className="text-white font-semibold text-sm leading-tight truncate">{doc.name}</p>
           <p className="text-white/40 text-xs mt-0.5">
             {doc.file_type === 'pdf' ? 'Documento PDF' : 'Imagem'}
           </p>
         </div>
-        <button
-          onClick={onClose}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          Fechar
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => onDownload()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+            title="Baixar"
+          >
+            <ActionIcon name="download" className="w-4 h-4" />
+            <span className="hidden sm:inline">Baixar</span>
+          </button>
+          {canEdit && (
+            <button
+              onClick={() => onRename()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+              title="Renomear"
+            >
+              <ActionIcon name="rename" className="w-4 h-4" />
+              <span className="hidden sm:inline">Renomear</span>
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => {
+                if (!confirmDelete) { setConfirmDelete(true); return }
+                onDelete()
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                confirmDelete
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+              title="Remover"
+            >
+              <ActionIcon name="trash" className="w-4 h-4" />
+              <span className="hidden sm:inline">{confirmDelete ? 'Confirmar' : 'Remover'}</span>
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+            title="Fechar"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span className="hidden sm:inline">Fechar</span>
+          </button>
+        </div>
       </div>
 
-      {/* Content — no download controls in our UI */}
       <div
         className="flex-1 flex items-center justify-center min-h-0"
         onClick={e => e.stopPropagation()}
@@ -370,6 +497,75 @@ function Lightbox({ viewer, onClose }) {
             style={{ maxWidth: '900px' }}
           />
         )}
+      </div>
+    </div>
+  )
+}
+
+function RenameModal({ doc, onClose, onSave }) {
+  const [name, setName] = useState(doc.name)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function submit(e) {
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (!trimmed) { setError('Dê um nome ao documento.'); return }
+    if (trimmed === doc.name) { onClose(); return }
+    setSaving(true)
+    setError('')
+    try {
+      await onSave(trimmed)
+    } catch (err) {
+      setError(err?.message || 'Erro ao renomear.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Renomear documento</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Nome</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              maxLength={80}
+              autoFocus
+              required
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+            />
+          </div>
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+          )}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !name.trim()}
+              className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
