@@ -8,12 +8,18 @@ const MAIL_FROM = Deno.env.get('MAIL_FROM') || 'Compasso <ola@familiaemcompasso.
 const APP_URL = Deno.env.get('APP_URL') || 'https://familiaemcompasso.com.br'
 
 const ENTITY_PATH: Record<string, string> = {
-  guard_swap:    '/guarda',
-  guard_pattern: '/guarda',
+  guard_swap:    '/agenda',
+  guard_pattern: '/agenda',
   decision:      '/decisoes',
   consultation:  '/saude',
   expense:       '/despesas',
   document:      '/documentos',
+}
+
+// kinds que vão pra um lugar mais específico que o entity_type padrão
+const KIND_PATH: Record<string, string> = {
+  guard_switch_eve:      '/bolsa',
+  consultation_upcoming: '/agenda',
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -128,7 +134,7 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, skipped: 'no RESEND_API_KEY' }), { headers: { ...corsHeaders(), 'Content-Type': 'application/json' } })
     }
 
-    const path = ENTITY_PATH[n.entity_type as string] || '/'
+    const path = KIND_PATH[n.kind as string] || ENTITY_PATH[n.entity_type as string] || '/'
     const ctaUrl = `${APP_URL}${path}${n.entity_id ? `?highlight=${n.entity_id}` : ''}`
     const kindLabel = KIND_LABEL[n.kind] || 'Compasso'
     const html = buildEmailHtml({
