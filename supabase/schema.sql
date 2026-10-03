@@ -480,3 +480,15 @@ grant all on public.audit_log to service_role;
 
 -- Triggers de audit e jobs de retenção são criados via migrations
 -- versionadas (não replicados aqui pra evitar drift).
+
+-- Grants faltantes em tabelas evolutivas (sem GRANT explícito, RLS nem roda)
+grant select, insert, update, delete on public.expenses to authenticated;
+grant select, insert, update, delete on public.expense_settings to authenticated;
+grant select, insert, update, delete on public.expense_settlements to authenticated;
+grant all on public.expenses, public.expense_settings, public.expense_settlements to service_role;
+
+grant select, update on public.notifications to authenticated;
+grant all on public.notifications to service_role;
+
+grant select, insert, update, delete on public.notification_preferences to authenticated;
+grant all on public.notification_preferences to service_role;
