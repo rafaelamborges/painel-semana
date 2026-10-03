@@ -6,6 +6,10 @@ const navItems = [
   { to: '/bolsa',      label: 'Bolsa',     icon: IconBolsa },
 ]
 
+function scrollMainToTop() {
+  document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 export default function BottomNav({ onOpenMenu }) {
   return (
     <nav className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white border-t border-linha safe-b">
@@ -15,7 +19,7 @@ export default function BottomNav({ onOpenMenu }) {
             key={to}
             to={to}
             end={exact}
-            onClick={() => { if (exact) document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' }) }}
+            onClick={scrollMainToTop}
             className="flex-1 min-h-[52px] flex flex-col items-center justify-center gap-1.5"
           >
             {({ isActive }) => (
@@ -31,7 +35,7 @@ export default function BottomNav({ onOpenMenu }) {
 
         <button
           type="button"
-          onClick={onOpenMenu}
+          onClick={() => { scrollMainToTop(); onOpenMenu?.() }}
           aria-label="Abrir menu"
           className="flex-1 min-h-[52px] flex flex-col items-center justify-center gap-1.5"
         >
