@@ -64,7 +64,12 @@ export default function Dashboard() {
     if (!data?.length) return
     const last = new Date(data[0].recorded_at)
     const days = differenceInDays(today, last)
-    if (days > 10) setTherapyAlert({ daysAgo: days, message: `Último registro de terapia há ${days} dias.` })
+    // Alerta vale quando passou do limiar (10 dias) e enquanto for recente:
+    // 15 dias desde quando o limiar foi cruzado (ou seja, days entre 11 e 25).
+    // Depois disso vira ruído e deixa de ser mostrado.
+    if (days > 10 && days <= 25) {
+      setTherapyAlert({ daysAgo: days, message: `Último registro de terapia há ${days} dias.` })
+    }
   }
 
   function formatEventDate(dateStr) {
@@ -127,8 +132,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-        {/* Coluna 1 — Período atual */}
+      <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+        {/* Coluna 1 — Período atual + Próxima troca */}
         <div className="flex flex-col gap-5 min-w-0">
           {guardColor && (
             <div className="card">
@@ -161,27 +166,24 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Coluna 2 — Alertas + próximos registros */}
+        {/* Coluna 2 — Alertas (condicional) + próximos registros */}
         <div className="flex flex-col gap-4 min-w-0">
-          <div className="flex items-baseline justify-between">
-            <h2 className="section-title">Alertas</h2>
-            <Link to="/lembretes" className="btn-texto">Ver todos</Link>
-          </div>
-
-          {alertas.length === 0 ? (
-            <div className="card">
-              <p className="corpo">Nenhum alerta agora.</p>
-            </div>
-          ) : (
-            alertas.map((a, i) => (
-              <Link key={i} to="/lembretes" className="card-link">
-                <p className={`rotulo mb-2.5 ${a.cor}`}>{a.nivel}</p>
-                <p className="text-[16px] font-light leading-snug text-ink-body">{a.texto}</p>
-              </Link>
-            ))
+          {alertas.length > 0 && (
+            <>
+              <div className="flex items-baseline justify-between">
+                <h2 className="section-title">Alertas</h2>
+                <Link to="/lembretes" className="btn-texto">Ver todos</Link>
+              </div>
+              {alertas.map((a, i) => (
+                <Link key={i} to="/lembretes" className="card-link">
+                  <p className={`rotulo mb-2.5 ${a.cor}`}>{a.nivel}</p>
+                  <p className="text-[16px] font-light leading-snug text-ink-body">{a.texto}</p>
+                </Link>
+              ))}
+            </>
           )}
 
-          <h2 className="section-title mt-3">Próximos registros</h2>
+          <h2 className={`section-title ${alertas.length > 0 ? 'mt-3' : ''}`}>Próximos registros</h2>
           {events.length === 0 ? (
             <div className="card">
               <p className="corpo">Agenda limpa nos próximos 14 dias.</p>
@@ -207,11 +209,15 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Coluna 3 — Mini calendário */}
-        <div className="flex flex-col gap-5 min-w-0">
-          <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
+      {/* Calendário em destaque — full width abaixo */}
+      <div className="mt-2">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="section-title">Calendário</h2>
+          <Link to="/agenda" className="btn-texto">Abrir agenda</Link>
         </div>
+        <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
       </div>
     </div>
   )
@@ -269,26 +275,38 @@ function MiniCalendar({ familyId, guardPattern, guardianColors }) {
   }
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+    <div className="card" style={{ padding: '20px 22px' }}>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
           <button onClick={() => setMonth(m => subMonths(m, 1))} className="btn-icon" aria-label="Mês anterior">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <p className="rotulo">{format(month, "MMMM 'de' yyyy", { locale: ptBR }).toUpperCase()}</p>
+          <p className="font-display text-[18px] font-normal text-ink capitalize min-w-[180px] text-center" style={{ letterSpacing: '-0.01em' }}>
+            {format(month, "MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
           <button onClick={() => setMonth(m => addMonths(m, 1))} className="btn-icon" aria-label="Próximo mês">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
+        {guardPattern && (
+          <div className="flex gap-4 text-[11px] text-ink-mute">
+            {['mother','father'].map(g => (
+              <span key={g} className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: guardianColors[g]?.lightHex, border: `1.5px solid ${guardianColors[g]?.hex}` }} />
+                <span className="font-mono tracking-wide uppercase">{g === 'mother' ? 'A' : 'B'}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
         {WEEKDAYS.map((d, i) => (
           <div key={i} className="text-center rotulo py-1">{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {days.map((day, i) => {
           const inMonth = isSameMonth(day, month)
           const today = isToday(day)
@@ -298,19 +316,24 @@ function MiniCalendar({ familyId, guardPattern, guardianColors }) {
           return (
             <div
               key={i}
-              className="aspect-square rounded-md flex items-center justify-center relative"
+              className="rounded-lg flex items-center justify-center relative"
               style={{
+                height: 'clamp(44px, 7vw, 72px)',
                 backgroundColor: color ? color.lightHex : 'transparent',
                 opacity: inMonth ? 1 : 0.3,
+                outline: color ? `1px solid ${color.hex}20` : 'none',
+                outlineOffset: '-1px',
               }}
             >
               <span
-                className={`text-[12px] font-normal ${today ? 'w-6 h-6 rounded-full bg-bussola text-white flex items-center justify-center' : 'text-ink'}`}
+                className={today
+                  ? 'w-7 h-7 rounded-full bg-bussola text-white flex items-center justify-center text-[13px] font-medium'
+                  : 'text-[14px] font-normal text-ink'}
               >
                 {format(day, 'd')}
               </span>
               {dayEvents > 0 && (
-                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-ink-mute" />
+                <span className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-ink-mute" />
               )}
             </div>
           )
