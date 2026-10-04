@@ -6,6 +6,8 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const SITE = 'https://familiaemcompasso.com.br'
+const DEFAULT_DESCRIPTION = 'Organizando o cuidado das crianças com leveza e alinhamento.'
+const DEFAULT_IMAGE = `${SITE}/icon-512.png`
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const dist = resolve(root, 'dist')
 const ssrDir = resolve(root, 'dist-ssr')
@@ -18,11 +20,13 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
 function writePage(path, { html, title, description, image, type = 'website', data }) {
   const url = SITE + path
   let head = `<link rel="canonical" href="${url}" />\n    <meta property="og:title" content="${esc(title)}" />\n    <meta property="og:url" content="${url}" />\n    <meta property="og:type" content="${type}" />\n    <meta property="og:site_name" content="Compasso" />`
-  if (description) head += `\n    <meta property="og:description" content="${esc(description)}" />`
-  if (image) head += `\n    <meta property="og:image" content="${esc(image)}" />`
+  head += `\n    <meta property="og:description" content="${esc(description || DEFAULT_DESCRIPTION)}" />`
+  head += `\n    <meta property="og:image" content="${esc(image || DEFAULT_IMAGE)}" />`
   if (data) head += `\n    <script>window.__BLOG__=${JSON.stringify({ path, ...data }).replace(/</g, '\\u003c')}</script>`
 
-  let page = template
+  // Remove as tags genéricas do index.html que serão substituídas pelas da página.
+  const base = template.replace(/\s*<meta property="og:(title|description|type|url|image)" content="[^"]*" \/>/g, '')
+  let page = base
     .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
     .replace('</head>', `    ${head}\n  </head>`)
     .replace('<div id="root"></div>', `<div id="root">${html}</div>`)
