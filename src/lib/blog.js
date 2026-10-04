@@ -32,8 +32,8 @@ function normalize(p) {
   }
 }
 
-export async function fetchPosts() {
-  const res = await fetch(`${API}/?number=100&order_by=date&order=DESC&fields=${LIST_FIELDS}`)
+export async function fetchPosts(limit = 100) {
+  const res = await fetch(`${API}/?number=${limit}&order_by=date&order=DESC&fields=${LIST_FIELDS}`)
   if (!res.ok) throw new Error(`Blog: falha ao listar posts (${res.status})`)
   const data = await res.json()
   return (data.posts || []).map(normalize)
