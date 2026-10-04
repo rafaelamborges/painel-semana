@@ -23,6 +23,8 @@ import Perfil from './pages/Perfil'
 import NotFound from './pages/NotFound'
 import Privacidade from './pages/Privacidade'
 import Termos from './pages/Termos'
+import Blog from './pages/Blog'
+import BlogPost from './pages/BlogPost'
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
             <Routes>
               <Route path="/privacidade" element={<Privacidade />} />
               <Route path="/termos" element={<Termos />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/login" element={<Login />} />
               <Route path="/onboarding" element={
                 <RequireAuth><Onboarding /></RequireAuth>

@@ -146,6 +146,9 @@ export default function Login() {
           {' '}e com a{' '}
           <a href="/privacidade" className="text-bussola hover:underline">Política de Privacidade</a>.
         </p>
+        <p className="text-center apoio mt-3">
+          <a href="/blog" className="text-bussola hover:underline">Leia o blog do Compasso</a>
+        </p>
       </div>
     </div>
   )
