@@ -38,7 +38,8 @@ export default function Blog({ initialPosts }) {
     <BlogShell>
       <div className="mb-16">
         <h1 className="font-display leading-[1.0] tracking-[-0.03em]" style={{ fontSize: 'clamp(40px,7vw,64px)', fontWeight: 200 }}>
-          Duas casas. <em style={{ fontWeight: 600 }}>Uma só criança.</em>
+          <span className="block">Duas casas.</span>
+          <em className="block" style={{ fontWeight: 600 }}>Uma só criança.</em>
         </h1>
         <p className="mt-5 text-[16px] leading-[1.55] font-light max-w-xl">
           Coparentalidade, desenvolvimento infantil e a rotina da criança entre dois lares.
