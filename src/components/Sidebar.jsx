@@ -17,6 +17,7 @@ const navItems = [
   { to: '/documentos',label: 'Documentos', icon: IconHistorico },
   { to: '/decisoes',  label: 'Combinados',icon: IconCombinados },
   { to: '/notificacoes', label: 'Notificações', icon: IconSino,    badge: 'unread' },
+  { to: '/blog',      label: 'Blog',      icon: IconBlog },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -263,6 +264,16 @@ function IconHistorico({ className }) {
       <div className="h-[1.8px] w-full bg-current" />
       <div className="h-[1.8px] w-[70%] bg-current" />
       <div className="h-[1.8px] w-[90%] bg-current" />
+    </div>
+  )
+}
+function IconBlog({ className }) {
+  return (
+    <div className={`${className} flex items-center justify-center`}>
+      <div className="w-full h-[85%] rounded-[3px] border-[1.8px] border-current flex flex-col justify-center gap-[2px] px-[2px]">
+        <div className="h-[1.5px] w-full bg-current" />
+        <div className="h-[1.5px] w-[60%] bg-current" />
+      </div>
     </div>
   )
 }

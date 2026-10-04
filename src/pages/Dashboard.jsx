@@ -8,6 +8,7 @@ import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
 import PerfilAtalhoCard from '../components/PerfilAtalhoCard'
+import BlogWidget from '../components/BlogWidget'
 
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
@@ -219,6 +220,8 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <BlogWidget />
     </div>
   )
 }
