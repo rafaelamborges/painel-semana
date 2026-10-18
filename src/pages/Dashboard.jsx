@@ -6,7 +6,8 @@ import { format, isToday, isTomorrow, differenceInDays, parseISO,
 import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { getGuardForDate, getGuardWeekStart, isDayBeforeSwap, isSwapDay, getNextSwapDate } from '../lib/guard'
+import { isDayBeforeSwap, isSwapDay,
+  getCurrentPeriodBounds, getEffectiveGuardian } from '../lib/guard'
 import PerfilAtalhoCard from '../components/PerfilAtalhoCard'
 import BlogWidget from '../components/BlogWidget'
 
@@ -16,20 +17,27 @@ export default function Dashboard() {
   const { child, family, guardPattern, guardianColors, guardianLabels } = useFamily()
   const [events, setEvents] = useState([])
   const [therapyAlert, setTherapyAlert] = useState(null)
+  const [swaps, setSwaps] = useState([])
   const today = new Date()
 
-  const currentGuard = guardPattern ? getGuardForDate(today, guardPattern) : null
+  // Período atual contíguo com o mesmo guardião efetivo (respeita overrides manuais).
+  // Se um dia foi marcado como ajuste manual na agenda, a mensagem do topo e os
+  // cards de período precisam seguir isso em vez da rotação crua.
+  const period = useMemo(() => getCurrentPeriodBounds(today, guardPattern, swaps),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [guardPattern, swaps])
+
+  const currentGuard = period?.guardian || null
   const guardColor = currentGuard ? guardianColors[currentGuard] : null
   const guardLabel = currentGuard ? guardianLabels[currentGuard] : null
 
-  // Período atual: início/fim da semana de guarda e progresso
-  const weekStart = guardPattern ? getGuardWeekStart(today, guardPattern.switch_day ?? 2) : today
-  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekStart = period?.start || today
+  const weekEnd = period?.end || today
   const cumpridos = Math.max(0, differenceInDays(today, weekStart) + 1)
   const restantes = Math.max(0, differenceInDays(weekEnd, today))
 
-  // Próxima troca: primeiro switch_day após hoje
-  const proximaTroca = new Date(weekStart); proximaTroca.setDate(proximaTroca.getDate() + 7)
+  // Próxima troca: dia seguinte ao fim do período efetivo (quando a guarda muda).
+  const proximaTroca = new Date(weekEnd); proximaTroca.setDate(proximaTroca.getDate() + 1)
 
   // Horário da troca (formato HH:mm). Fallback 08:00 se ainda não estiver preenchido.
   const switchTime = (guardPattern?.switch_time || '08:00').slice(0, 5)
@@ -38,8 +46,17 @@ export default function Dashboard() {
     if (!isSupabaseConfigured || !family) return
     loadEvents()
     checkTherapy()
+    loadSwaps()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [family])
+
+  async function loadSwaps() {
+    const { data } = await supabase
+      .from('guard_swaps')
+      .select('id, requested_date, proposed_exchange_date, reason, status')
+      .eq('family_id', family.id)
+    setSwaps(data || [])
+  }
 
   async function loadEvents() {
     const from = today.toISOString()
@@ -203,7 +220,7 @@ export default function Dashboard() {
             <div className="card-lista">
               {events.map(ev => {
                 const evDate = parseISO(ev.start_at)
-                const evGuard = guardPattern ? getGuardForDate(evDate, guardPattern) : null
+                const evGuard = guardPattern ? getEffectiveGuardian(evDate, guardPattern, swaps) : null
                 const evColor = evGuard ? guardianColors[evGuard] : null
                 return (
                   <div key={ev.id} className="linha-item">
@@ -259,22 +276,9 @@ function MiniCalendar({ familyId, guardPattern, guardianColors }) {
     return map
   }, [monthEvents])
 
-  function getManualOverride(day) {
-    const dayStr = format(day, 'yyyy-MM-dd')
-    for (const s of swaps) {
-      if (!s.reason?.startsWith('[override:')) continue
-      const start = s.requested_date
-      const end = s.proposed_exchange_date || s.requested_date
-      if (dayStr >= start && dayStr <= end) {
-        return s.reason.match(/\[override:(mother|father)\]/)?.[1] || null
-      }
-    }
-    return null
-  }
-
   function guardianForDay(day) {
     if (!guardPattern) return null
-    return getManualOverride(day) || getGuardForDate(day, guardPattern)
+    return getEffectiveGuardian(day, guardPattern, swaps)
   }
 
   return (
