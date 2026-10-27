@@ -19,6 +19,7 @@ const ENTITY_PATH: Record<string, string> = {
 // kinds que vão pra um lugar mais específico que o entity_type padrão
 const KIND_PATH: Record<string, string> = {
   guard_switch_eve:      '/bolsa',
+  bag_reminder:          '/bolsa',
   consultation_upcoming: '/agenda',
 }
 
@@ -27,6 +28,7 @@ const KIND_LABEL: Record<string, string> = {
   guard_swap_approved:   'Troca de guarda aprovada',
   guard_swap_denied:     'Troca de guarda negada',
   guard_switch_eve:      'Véspera de troca',
+  bag_reminder:          'Lembrete da bolsa',
   decision_created:      'Novo combinado',
   consultation_created:  'Nova consulta',
   consultation_upcoming: 'Consulta amanhã',

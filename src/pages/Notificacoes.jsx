@@ -10,6 +10,7 @@ const KIND_META = {
   guard_swap_approved:   { label: 'Troca aprovada',     tone: 'bg-[#DCFCE7] text-[#166534]' },
   guard_swap_denied:     { label: 'Troca negada',       tone: 'bg-[#FEE4E5] text-[#B91C1C]' },
   guard_switch_eve:      { label: 'Véspera de troca',   tone: 'bg-aurora text-[#7A2141]' },
+  bag_reminder:          { label: 'Lembrete da bolsa',  tone: 'bg-aurora text-[#7A2141]' },
   decision_created:      { label: 'Novo combinado',     tone: 'bg-bussola-wash text-bussola' },
   consultation_created:  { label: 'Consulta',           tone: 'bg-[#EEF0FF] text-[#4C48A9]' },
   consultation_upcoming: { label: 'Consulta amanhã',    tone: 'bg-[#EEF0FF] text-[#4C48A9]' },
@@ -30,6 +31,7 @@ const ENTITY_PATH = {
 // Alguns kinds vão pra um lugar mais específico que o entity_type padrão
 const KIND_PATH = {
   guard_switch_eve:      '/bolsa',   // véspera de troca → preparar bolsa
+  bag_reminder:          '/bolsa',   // lembrete manual da bolsa → preparar bolsa
   consultation_upcoming: '/agenda',  // consulta amanhã → ver na agenda
 }
 
