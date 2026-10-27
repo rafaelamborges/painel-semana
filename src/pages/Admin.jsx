@@ -28,6 +28,7 @@ export default function Admin() {
   const [changingRole, setChangingRole] = useState(null)
   const [renamingId, setRenamingId] = useState(null)
   const [renameValue, setRenameValue] = useState('')
+  const [editingContact, setEditingContact] = useState(null) // member being edited
 
   const atLimit = members.length >= MAX_MEMBERS
   const me = getCurrentUserMember?.()
@@ -159,7 +160,11 @@ export default function Admin() {
                       )}
                     </div>
                   )}
-                  <p className="text-xs text-gray-500">{ROLE_LABELS[m.role] || m.role}{m.email ? ` · ${m.email}` : ''}</p>
+                  <p className="text-xs text-gray-500">
+                    {ROLE_LABELS[m.role] || m.role}
+                    {m.email ? ` · ${m.email}` : ''}
+                    {m.phone ? ` · ${m.phone}` : ''}
+                  </p>
                 </div>
                 {permissions.canManageUsers && !isSysadmin && renamingId !== m.id && (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -179,6 +184,10 @@ export default function Admin() {
                       </>
                     ) : (
                       <>
+                        <button onClick={() => setEditingContact(m)}
+                          className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-2 py-0.5 rounded-lg hover:bg-gray-50">
+                          Contato
+                        </button>
                         <button onClick={() => setChangingRole(m.id)}
                           className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-2 py-0.5 rounded-lg hover:bg-gray-50">
                           Papel
@@ -205,6 +214,66 @@ export default function Admin() {
       {showInvite && (
         <InviteModal onClose={() => setShowInvite(false)} />
       )}
+      {editingContact && (
+        <EditContactModal
+          member={editingContact}
+          onClose={() => setEditingContact(null)}
+          onSaved={() => { setEditingContact(null); reload() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function EditContactModal({ member, onClose, onSaved }) {
+  const [email, setEmail] = useState(member.email || '')
+  const [phone, setPhone] = useState(member.phone || '')
+  const [saving, setSaving] = useState(false)
+
+  async function save(e) {
+    e.preventDefault()
+    setSaving(true)
+    await supabase.from('family_members').update({
+      email: email.trim() || null,
+      phone: phone.trim() || null,
+    }).eq('id', member.id)
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Contato de {member.name}</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <form onSubmit={save} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Celular</label>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(81) 99999-8888"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            <p className="text-[11px] text-gray-400 mt-1">Usado pra enviar SMS e abrir WhatsApp direto.</p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50">
+              {saving ? 'Salvando…' : 'Salvar'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
@@ -303,6 +372,7 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
   const [role, setRole] = useState('babysitter')
   const [color, setColor] = useState('#f59e0b')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function save(e) {
@@ -316,6 +386,7 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
       role,
       color,
       email: email || null,
+      phone: phone || null,
     })
     setSaving(false)
     onSaved()
@@ -358,6 +429,12 @@ function AddMemberForm({ familyId, onClose, onSaved }) {
             <label className="text-xs font-medium text-gray-500 mb-1 block">Email (opcional)</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 mb-1 block">Celular (opcional)</label>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(81) 99999-8888"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            <p className="text-[11px] text-gray-400 mt-1">Usado pra enviar SMS e abrir WhatsApp direto.</p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">Cor de identificação</label>

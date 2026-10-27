@@ -4,31 +4,37 @@ import { ptBR } from 'date-fns/locale'
 import { useFamily } from '../context/FamilyContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getNextSwapDate } from '../lib/guard'
+import { sendBagReminder } from '../lib/bagReminder'
 
 export default function Bolsa() {
-  const { family, child, guardPattern, permissions, getCurrentUserMember } = useFamily()
+  const { family, child, guardPattern, members, permissions, getCurrentUserMember } = useFamily()
   const [items, setItems] = useState([])
   const [shipments, setShipments] = useState([])
+  const [swaps, setSwaps] = useState([])
   const [loading, setLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showPrepare, setShowPrepare] = useState(false)
   const [showAddReturn, setShowAddReturn] = useState(false)
   const [undoReturn, setUndoReturn] = useState(null) // { shipment, secondsLeft }
+  const [reminderState, setReminderState] = useState(null) // 'sending' | result object | null
   const undoTimerRef = useRef(null)
 
   const load = useCallback(async () => {
     if (!isSupabaseConfigured || !family || !child) return
     setLoading(true)
-    const [{ data: it }, { data: sh }] = await Promise.all([
+    const [{ data: it }, { data: sh }, { data: sw }] = await Promise.all([
       supabase.from('bag_items').select('*')
         .eq('family_id', family.id).eq('child_id', child.id).eq('active', true)
         .order('created_at'),
       supabase.from('bag_shipments').select('*')
         .eq('family_id', family.id).eq('child_id', child.id).eq('must_return', true).is('returned_at', null)
         .order('sent_at', { ascending: false }),
+      supabase.from('guard_swaps').select('id, requested_date, proposed_exchange_date, reason')
+        .eq('family_id', family.id),
     ])
     setItems(it || [])
     setShipments(sh || [])
+    setSwaps(sw || [])
     setLoading(false)
   }, [family, child])
 
@@ -90,6 +96,16 @@ export default function Bolsa() {
 
   const nextSwap = useMemo(() => guardPattern ? getNextSwapDate(new Date(), guardPattern) : null, [guardPattern])
   const displayName = child?.name || 'a criança'
+
+  async function handleSendReminder() {
+    setReminderState({ status: 'sending' })
+    const result = await sendBagReminder({
+      family, child, guardPattern, members,
+      currentUserMember: getCurrentUserMember(),
+      swaps,
+    })
+    setReminderState({ status: result.error ? 'error' : 'done', result })
+  }
 
   if (loading) {
     return (
@@ -156,6 +172,9 @@ export default function Bolsa() {
         </div>
         {permissions.canAdd && (
           <div className="flex gap-2 flex-wrap">
+            <button onClick={handleSendReminder} className="btn-secundario" disabled={!!reminderState && reminderState.status === 'sending'}>
+              {reminderState?.status === 'sending' ? 'Enviando…' : 'Enviar lembrete'}
+            </button>
             <button onClick={() => setShowOnboarding(true)} className="btn-secundario">Editar itens</button>
             <button onClick={() => setShowPrepare(true)} className="btn-primario">Preparar bolsa</button>
           </div>
@@ -260,8 +279,123 @@ export default function Bolsa() {
           onDismiss={() => { clearUndoTimer(); setUndoReturn(null) }}
         />
       )}
+
+      {reminderState && reminderState.status !== 'sending' && (
+        <ReminderResultModal
+          state={reminderState}
+          childName={displayName}
+          onClose={() => setReminderState(null)}
+        />
+      )}
     </div>
   )
+}
+
+function ReminderResultModal({ state, childName, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  if (state.status === 'error') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
+        <div className="bg-white w-full max-w-md p-6 rounded-faixa shadow-modal" onClick={e => e.stopPropagation()}>
+          <h3 className="section-title mb-2">Não deu pra enviar</h3>
+          <p className="corpo">{state.result?.error || 'Erro desconhecido.'}</p>
+          <button onClick={onClose} className="btn-primario w-full mt-5">Fechar</button>
+        </div>
+      </div>
+    )
+  }
+
+  const r = state.result
+  const emailStatus = channelLabel(r.emailResult)
+  const smsStatus = channelLabel(r.smsResult)
+
+  async function copyText() {
+    try {
+      await navigator.clipboard.writeText(r.whatsappText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      alert('Não foi possível copiar. Selecione o texto manualmente.')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
+      <div className="bg-white w-full max-w-md p-6 rounded-faixa shadow-modal max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="rotulo">Lembrete enviado</p>
+            <h3 className="section-title mt-1">
+              Pra {r.recipient?.name?.split(' ')[0] || 'o(a) responsável'}
+            </h3>
+          </div>
+          <button onClick={onClose} className="btn-icon" aria-label="Fechar">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {r.recipientIsMe && (
+          <p className="corpo mb-4 text-ink-mute">
+            Você está com a guarda de {childName} agora, então o lembrete foi pra você mesmo.
+          </p>
+        )}
+
+        <div className="card-lista mb-5">
+          <ChannelLine label="Alerta no app" status={{ ok: true, text: 'Enviado' }} />
+          <ChannelLine label="E-mail" status={emailStatus} />
+          <ChannelLine label="SMS (Brevo)" status={smsStatus} />
+        </div>
+
+        <p className="rotulo mb-2">Mensagem pra WhatsApp</p>
+        <div className="rounded-btn border border-linha bg-nevoa/40 p-3 mb-3">
+          <p className="text-[14px] leading-relaxed text-ink whitespace-pre-wrap">{r.whatsappText}</p>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={copyText} className="btn-secundario flex-1 min-w-[140px]">
+            {copied ? '✓ Copiado' : 'Copiar texto'}
+          </button>
+          {r.whatsappUrl ? (
+            <a href={r.whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-primario flex-1 min-w-[140px] text-center">
+              Abrir no WhatsApp
+            </a>
+          ) : (
+            <button onClick={onClose} className="btn-primario flex-1 min-w-[140px]">Pronto</button>
+          )}
+        </div>
+
+        {!r.whatsappUrl && (
+          <p className="apoio mt-3">Cadastre o telefone de {r.recipient?.name?.split(' ')[0] || 'quem recebe'} em Responsáveis pra abrir o WhatsApp direto.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ChannelLine({ label, status }) {
+  return (
+    <div className="linha-item">
+      <span className={`ponto ${status.ok ? 'bg-bussola' : 'bg-ink-mute'}`} />
+      <span className="text-[14px] font-normal text-ink flex-1">{label}</span>
+      <span className="apoio flex-shrink-0">{status.text}</span>
+    </div>
+  )
+}
+
+function channelLabel(res) {
+  if (!res) return { ok: false, text: '—' }
+  if (res.ok && res.skipped === 'no email')          return { ok: false, text: 'Sem e-mail cadastrado' }
+  if (res.ok && res.skipped === 'no phone')          return { ok: false, text: 'Sem telefone cadastrado' }
+  if (res.ok && res.skipped === 'invalid phone')     return { ok: false, text: 'Telefone inválido' }
+  if (res.ok && res.skipped === 'no RESEND_API_KEY') return { ok: false, text: 'Config pendente' }
+  if (res.ok && res.skipped === 'no BREVO_API_KEY')  return { ok: false, text: 'Config pendente' }
+  if (res.ok && res.skipped === 'email disabled by user') return { ok: false, text: 'Desligado pelo destinatário' }
+  if (res.ok && res.skipped === 'already sent')      return { ok: true,  text: 'Já enviado' }
+  if (res.ok) return { ok: true, text: 'Enviado' }
+  return { ok: false, text: res.error ? 'Falha' : '—' }
 }
 
 function UndoToast({ name, secondsLeft, onUndo, onDismiss }) {

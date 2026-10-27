@@ -135,6 +135,72 @@ export function getGuardForDateWithSwaps(date, pattern, swaps = []) {
   return getSwappedGuardian(weekStart, baseGuardian, swaps)
 }
 
+/**
+ * Formata uma Date como 'yyyy-MM-dd' pra comparar com datas do banco
+ * (requested_date, proposed_exchange_date são DATE no Postgres).
+ */
+function formatDateISO(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+/**
+ * Resolve o override manual que cobre `day`. Overrides são swaps com
+ * reason `[override:mother|father]` cobrindo o intervalo
+ * requested_date..proposed_exchange_date (inclusivo).
+ */
+export function getOverrideForDay(day, swaps = []) {
+  const dayStr = typeof day === 'string' ? day : formatDateISO(day)
+  for (const s of swaps) {
+    if (!s.reason?.startsWith('[override:')) continue
+    const start = s.requested_date
+    const end = s.proposed_exchange_date || s.requested_date
+    if (dayStr >= start && dayStr <= end) {
+      return s.reason.match(/\[override:(mother|father)\]/)?.[1] || null
+    }
+  }
+  return null
+}
+
+/**
+ * Guardião efetivo pro dia: override manual se existir, senão o pattern base.
+ */
+export function getEffectiveGuardian(day, pattern, swaps = []) {
+  return getOverrideForDay(day, swaps) || getGuardForDate(day, pattern)
+}
+
+/**
+ * Período atual contíguo com o mesmo guardião efetivo, ancorado em `today`.
+ * Caminha pra trás e pra frente respeitando overrides e troca de rotação.
+ * Retorna { start, end, guardian } com start<=today<=end, ou null se não há pattern.
+ * Limita busca a 60 dias de cada lado como salvaguarda.
+ */
+export function getCurrentPeriodBounds(today, pattern, swaps = []) {
+  if (!pattern) return null
+  const base = new Date(today); base.setHours(0, 0, 0, 0)
+  const guardian = getEffectiveGuardian(base, pattern, swaps)
+  if (!guardian) return null
+  const MAX_DAYS = 60
+
+  let start = new Date(base)
+  for (let i = 0; i < MAX_DAYS; i++) {
+    const prev = new Date(start); prev.setDate(prev.getDate() - 1)
+    if (getEffectiveGuardian(prev, pattern, swaps) !== guardian) break
+    start = prev
+  }
+
+  let end = new Date(base)
+  for (let i = 0; i < MAX_DAYS; i++) {
+    const next = new Date(end); next.setDate(next.getDate() + 1)
+    if (getEffectiveGuardian(next, pattern, swaps) !== guardian) break
+    end = next
+  }
+
+  return { start, end, guardian }
+}
+
 export const GUARDIAN_LABELS = {
   mother: 'Guardião A',
   father: 'Guardião B',
