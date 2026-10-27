@@ -25,31 +25,60 @@ import { getEffectiveGuardian } from './guard'
  *   error?: string,
  * }>}
  */
+// Constrói o texto do WhatsApp sem depender do backend. É o mínimo útil pra
+// a UX: mesmo que o insert ou as EFs falhem, a copy é entregue.
+export function buildWhatsappText({ child, recipientFirstName }) {
+  const greeting = recipientFirstName ? `Oi, ${recipientFirstName}! ` : 'Oi! '
+  const childName = child?.name || 'das crianças'
+  return `${greeting}Só pra lembrar da bolsa de ${childName} antes da próxima troca — faixa do jiu-jítsu, livros da escola, essas coisas. 💜 (via Compasso · https://familiaemcompasso.com.br/bolsa)`
+}
+
+export function buildWhatsappUrl(phone, text) {
+  const digits = phoneToWaMe(phone)
+  return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : null
+}
+
+const SKIPPED_IN_APP = { ok: true, skipped: 'not-sent' }
+
 export async function sendBagReminder({ family, child, guardPattern, members, currentUserMember, swaps = [] }) {
-  const empty = {
-    recipient: null, notification: null, whatsappText: '', whatsappUrl: null,
-    emailResult: { ok: true, skipped: 'not-sent' },
-    smsResult:   { ok: true, skipped: 'not-sent' },
-    recipientIsMe: false,
+  // Sempre resolve o guardião antes de tudo. Se der ruim depois, ainda temos
+  // o destinatário e podemos oferecer o copy do WhatsApp.
+  let recipient = null
+  let recipientIsMe = false
+
+  const currentGuardian = guardPattern
+    ? getEffectiveGuardian(new Date(), guardPattern, swaps)
+    : null
+
+  if (currentGuardian) {
+    recipient = members.find(m => m.role === currentGuardian) || null
+    recipientIsMe = recipient?.id === currentUserMember?.id
+  }
+
+  const recipientFirstName = recipient?.name?.split(' ')[0] || ''
+  const whatsappText = buildWhatsappText({ child, recipientFirstName })
+  const whatsappUrl = recipient?.phone ? buildWhatsappUrl(recipient.phone, whatsappText) : null
+
+  // Base de retorno — se falharmos daqui pra frente, o cliente ainda tem o
+  // texto do WhatsApp pra copiar e manda do app dele mesmo.
+  const base = {
+    recipient, recipientIsMe,
+    notification: null,
+    whatsappText, whatsappUrl,
+    emailResult: SKIPPED_IN_APP,
+    smsResult: SKIPPED_IN_APP,
+    inAppResult: SKIPPED_IN_APP,
   }
 
   if (!family?.id || !child?.id || !guardPattern) {
-    return { ...empty, error: 'Família, criança ou padrão de guarda ausente.' }
+    return { ...base, error: 'Família, criança ou padrão de guarda ausente.' }
   }
+  if (!currentGuardian) return { ...base, error: 'Não foi possível identificar quem está com a guarda.' }
+  if (!recipient) return { ...base, error: `Nenhum responsável cadastrado como ${currentGuardian === 'mother' ? 'mãe' : 'pai'}.` }
 
-  const currentGuardian = getEffectiveGuardian(new Date(), guardPattern, swaps)
-  if (!currentGuardian) return { ...empty, error: 'Não foi possível identificar quem está com a guarda.' }
-
-  const recipient = members.find(m => m.role === currentGuardian) || null
-  if (!recipient) return { ...empty, error: `Nenhum responsável cadastrado como ${currentGuardian === 'mother' ? 'mãe' : 'pai'}.` }
-
-  const recipientIsMe = recipient.id === currentUserMember?.id
   const senderName = currentUserMember?.name?.split(' ')[0] || 'alguém da família'
-  const recipientFirstName = recipient.name?.split(' ')[0] || ''
-  const childName = child.name
-
-  const title = `Lembrete da bolsa de ${childName}`
-  const body = `${senderName} pediu pra lembrar da bolsa de ${childName} antes da próxima troca.`
+  const title = `Lembrete da bolsa de ${child.name}`
+  const body = `${senderName} pediu pra lembrar da bolsa de ${child.name} antes da próxima troca.`
 
   const { data: notification, error: insertErr } = await supabase
     .from('notifications')
@@ -69,7 +98,13 @@ export async function sendBagReminder({ family, child, guardPattern, members, cu
     .single()
 
   if (insertErr || !notification) {
-    return { ...empty, recipient, recipientIsMe, error: insertErr?.message || 'Falha ao criar a notificação.' }
+    // Insert falhou — devolve base com inAppResult=falha mas MANTÉM a copy do WhatsApp
+    return {
+      ...base,
+      inAppResult: { ok: false, error: insertErr?.message || 'Falha ao criar a notificação.' },
+      emailResult: { ok: false, skipped: 'insert-failed' },
+      smsResult:   { ok: false, skipped: 'insert-failed' },
+    }
   }
 
   // Dispara email e SMS em paralelo. Erros voltam no resultado mas não bloqueiam
@@ -79,19 +114,10 @@ export async function sendBagReminder({ family, child, guardPattern, members, cu
     invokeEdge('send-sms-brevo',   { notification_id: notification.id }),
   ])
 
-  const greeting = recipientFirstName ? `Oi, ${recipientFirstName}! ` : 'Oi! '
-  const whatsappText = `${greeting}Só pra lembrar da bolsa de ${childName} antes da próxima troca — faixa do jiu-jítsu, livros da escola, essas coisas. 💜 (via Compasso · https://familiaemcompasso.com.br/bolsa)`
-
-  const whatsappUrl = recipient.phone
-    ? `https://wa.me/${phoneToWaMe(recipient.phone)}?text=${encodeURIComponent(whatsappText)}`
-    : null
-
   return {
-    recipient,
-    recipientIsMe,
+    ...base,
     notification,
-    whatsappText,
-    whatsappUrl,
+    inAppResult: { ok: true },
     emailResult,
     smsResult,
   }
