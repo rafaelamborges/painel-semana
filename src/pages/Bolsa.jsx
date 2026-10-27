@@ -293,22 +293,7 @@ export default function Bolsa() {
 
 function ReminderResultModal({ state, childName, onClose }) {
   const [copied, setCopied] = useState(false)
-
-  if (state.status === 'error') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
-        <div className="bg-white w-full max-w-md p-6 rounded-faixa shadow-modal" onClick={e => e.stopPropagation()}>
-          <h3 className="section-title mb-2">Não deu pra enviar</h3>
-          <p className="corpo">{state.result?.error || 'Erro desconhecido.'}</p>
-          <button onClick={onClose} className="btn-primario w-full mt-5">Fechar</button>
-        </div>
-      </div>
-    )
-  }
-
   const r = state.result
-  const emailStatus = channelLabel(r.emailResult)
-  const smsStatus = channelLabel(r.smsResult)
 
   async function copyText() {
     try {
@@ -320,15 +305,23 @@ function ReminderResultModal({ state, childName, onClose }) {
     }
   }
 
+  const inAppStatus = channelLabel(r.inAppResult)
+  const emailStatus = channelLabel(r.emailResult)
+  const smsStatus = channelLabel(r.smsResult)
+
+  const anySent = r.inAppResult?.ok || r.emailResult?.ok || r.smsResult?.ok
+  const title = anySent ? 'Lembrete enviado' : 'Pronto pra copiar'
+  const subtitle = r.recipient?.name
+    ? `Pra ${r.recipient.name.split(' ')[0]}`
+    : 'Mande pelo WhatsApp'
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-profundo/40" onClick={onClose}>
       <div className="bg-white w-full max-w-md p-6 rounded-faixa shadow-modal max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="rotulo">Lembrete enviado</p>
-            <h3 className="section-title mt-1">
-              Pra {r.recipient?.name?.split(' ')[0] || 'o(a) responsável'}
-            </h3>
+            <p className="rotulo">{title}</p>
+            <h3 className="section-title mt-1">{subtitle}</h3>
           </div>
           <button onClick={onClose} className="btn-icon" aria-label="Fechar">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,37 +332,42 @@ function ReminderResultModal({ state, childName, onClose }) {
 
         {r.recipientIsMe && (
           <p className="corpo mb-4 text-ink-mute">
-            Você está com a guarda de {childName} agora, então o lembrete foi pra você mesmo.
+            Você está com a guarda de {childName} agora, então o lembrete seria pra você mesmo.
           </p>
         )}
 
-        <div className="card-lista mb-5">
-          <ChannelLine label="Alerta no app" status={{ ok: true, text: 'Enviado' }} />
-          <ChannelLine label="E-mail" status={emailStatus} />
-          <ChannelLine label="SMS (Brevo)" status={smsStatus} />
-        </div>
+        {state.result?.error && (
+          <p className="apoio text-alerta mb-4">{state.result.error}</p>
+        )}
 
+        {/* Copy do WhatsApp sempre em primeiro — é o canal que não depende de infra */}
         <p className="rotulo mb-2">Mensagem pra WhatsApp</p>
         <div className="rounded-btn border border-linha bg-nevoa/40 p-3 mb-3">
           <p className="text-[14px] leading-relaxed text-ink whitespace-pre-wrap">{r.whatsappText}</p>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={copyText} className="btn-secundario flex-1 min-w-[140px]">
+        <div className="flex gap-2 flex-wrap mb-5">
+          <button onClick={copyText} className="btn-primario flex-1 min-w-[140px]">
             {copied ? '✓ Copiado' : 'Copiar texto'}
           </button>
-          {r.whatsappUrl ? (
-            <a href={r.whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-primario flex-1 min-w-[140px] text-center">
+          {r.whatsappUrl && (
+            <a href={r.whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-secundario flex-1 min-w-[140px] text-center">
               Abrir no WhatsApp
             </a>
-          ) : (
-            <button onClick={onClose} className="btn-primario flex-1 min-w-[140px]">Pronto</button>
           )}
         </div>
 
-        {!r.whatsappUrl && (
-          <p className="apoio mt-3">Cadastre o telefone de {r.recipient?.name?.split(' ')[0] || 'quem recebe'} em Responsáveis pra abrir o WhatsApp direto.</p>
+        {!r.whatsappUrl && r.recipient && (
+          <p className="apoio mb-5 -mt-2">Cadastre o telefone de {r.recipient.name?.split(' ')[0] || 'quem recebe'} em Responsáveis pra abrir o WhatsApp direto.</p>
         )}
+
+        {/* Status dos outros canais fica logo abaixo pra não roubar foco da copy */}
+        <p className="rotulo mb-2">Outros canais</p>
+        <div className="card-lista">
+          <ChannelLine label="Alerta no app" status={inAppStatus} />
+          <ChannelLine label="E-mail" status={emailStatus} />
+          <ChannelLine label="SMS (Brevo)" status={smsStatus} />
+        </div>
       </div>
     </div>
   )
@@ -394,8 +392,10 @@ function channelLabel(res) {
   if (res.ok && res.skipped === 'no BREVO_API_KEY')  return { ok: false, text: 'Config pendente' }
   if (res.ok && res.skipped === 'email disabled by user') return { ok: false, text: 'Desligado pelo destinatário' }
   if (res.ok && res.skipped === 'already sent')      return { ok: true,  text: 'Já enviado' }
+  if (res.ok && res.skipped === 'not-sent')          return { ok: false, text: 'Não enviado' }
+  if (res.ok && res.skipped === 'insert-failed')     return { ok: false, text: 'Pulado (sem alerta)' }
   if (res.ok) return { ok: true, text: 'Enviado' }
-  return { ok: false, text: res.error ? 'Falha' : '—' }
+  return { ok: false, text: 'Falha' }
 }
 
 function UndoToast({ name, secondsLeft, onUndo, onDismiss }) {
