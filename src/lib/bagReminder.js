@@ -3,6 +3,8 @@
 // invocação das duas Edge Functions (e-mail Resend + SMS Brevo) e geração do
 // texto copiável pro WhatsApp. As chamadas às EFs são paralelas e com erros
 // silenciosos (voltam no retorno); a notificação na home sempre vai.
+import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { supabase } from './supabase'
 import { getEffectiveGuardian } from './guard'
 
@@ -27,10 +29,42 @@ import { getEffectiveGuardian } from './guard'
  */
 // Constrói o texto do WhatsApp sem depender do backend. É o mínimo útil pra
 // a UX: mesmo que o insert ou as EFs falhem, a copy é entregue.
-export function buildWhatsappText({ child, recipientFirstName }) {
-  const greeting = recipientFirstName ? `Oi, ${recipientFirstName}! ` : 'Oi! '
+// Tom formal, sem emoji, com a lista completa de itens e pendências.
+export function buildWhatsappText({ child, recipientFirstName, items = [], pendingReturns = [], nextSwap = null }) {
   const childName = child?.name || 'das crianças'
-  return `${greeting}Só pra lembrar da bolsa de ${childName} antes da próxima troca — faixa do jiu-jítsu, livros da escola, essas coisas. 💜 (via Compasso · https://familiaemcompasso.com.br/bolsa)`
+  const salutation = recipientFirstName ? `Olá, ${recipientFirstName}.` : 'Olá.'
+  const swapClause = nextSwap
+    ? `, marcada para ${format(nextSwap, "EEEE, dd 'de' MMMM", { locale: ptBR })}`
+    : ''
+
+  const lines = [
+    `${salutation} Segue o lembrete da bolsa de ${childName} para a próxima troca${swapClause}.`,
+  ]
+
+  if (items.length > 0) {
+    lines.push('')
+    lines.push('Itens de sempre:')
+    for (const it of items) lines.push(`- ${it.name}`)
+  }
+
+  if (pendingReturns.length > 0) {
+    lines.push('')
+    lines.push('Itens pendentes de devolução:')
+    for (const p of pendingReturns) {
+      let suffix = ''
+      if (p.sent_at) {
+        try {
+          const d = typeof p.sent_at === 'string' ? parseISO(p.sent_at) : p.sent_at
+          suffix = ` (enviado em ${format(d, 'dd/MM')})`
+        } catch { /* ignora data inválida */ }
+      }
+      lines.push(`- ${p.name}${suffix}`)
+    }
+  }
+
+  lines.push('')
+  lines.push('Enviado pelo Compasso — https://familiaemcompasso.com.br/bolsa')
+  return lines.join('\n')
 }
 
 export function buildWhatsappUrl(phone, text) {
@@ -40,7 +74,7 @@ export function buildWhatsappUrl(phone, text) {
 
 const SKIPPED_IN_APP = { ok: true, skipped: 'not-sent' }
 
-export async function sendBagReminder({ family, child, guardPattern, members, currentUserMember, swaps = [] }) {
+export async function sendBagReminder({ family, child, guardPattern, members, currentUserMember, swaps = [], items = [], pendingReturns = [], nextSwap = null }) {
   // Sempre resolve o guardião antes de tudo. Se der ruim depois, ainda temos
   // o destinatário e podemos oferecer o copy do WhatsApp.
   let recipient = null
@@ -56,7 +90,7 @@ export async function sendBagReminder({ family, child, guardPattern, members, cu
   }
 
   const recipientFirstName = recipient?.name?.split(' ')[0] || ''
-  const whatsappText = buildWhatsappText({ child, recipientFirstName })
+  const whatsappText = buildWhatsappText({ child, recipientFirstName, items, pendingReturns, nextSwap })
   const whatsappUrl = recipient?.phone ? buildWhatsappUrl(recipient.phone, whatsappText) : null
 
   // Base de retorno — se falharmos daqui pra frente, o cliente ainda tem o

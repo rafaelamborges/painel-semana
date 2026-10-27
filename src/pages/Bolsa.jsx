@@ -102,7 +102,7 @@ export default function Bolsa() {
     const result = await sendBagReminder({
       family, child, guardPattern, members,
       currentUserMember: getCurrentUserMember(),
-      swaps,
+      swaps, items, pendingReturns: shipments, nextSwap,
     })
     setReminderState({ status: result.error ? 'error' : 'done', result })
   }
