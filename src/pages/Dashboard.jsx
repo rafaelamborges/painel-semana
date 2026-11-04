@@ -14,7 +14,7 @@ import BlogWidget from '../components/BlogWidget'
 const WEEKDAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
 
 export default function Dashboard() {
-  const { child, family, guardPattern, guardianColors, guardianLabels } = useFamily()
+  const { child, family, guardPattern, guardianColors, guardianLabels, guardianHouseLabels } = useFamily()
   const [events, setEvents] = useState([])
   const [therapyAlert, setTherapyAlert] = useState(null)
   const [swaps, setSwaps] = useState([])
@@ -156,7 +156,7 @@ export default function Dashboard() {
           <h2 className="section-title">Calendário</h2>
           <Link to="/agenda" className="btn-texto">Abrir agenda</Link>
         </div>
-        <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} />
+        <MiniCalendar familyId={family?.id} guardPattern={guardPattern} guardianColors={guardianColors} guardianHouseLabels={guardianHouseLabels} />
       </div>
 
       <div className="grid gap-5 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
@@ -243,7 +243,7 @@ export default function Dashboard() {
   )
 }
 
-function MiniCalendar({ familyId, guardPattern, guardianColors }) {
+function MiniCalendar({ familyId, guardPattern, guardianColors, guardianHouseLabels }) {
   const [month, setMonth] = useState(() => new Date())
   const [monthEvents, setMonthEvents] = useState([])
   const [swaps, setSwaps] = useState([])
@@ -296,11 +296,11 @@ function MiniCalendar({ familyId, guardPattern, guardianColors }) {
           </button>
         </div>
         {guardPattern && (
-          <div className="flex gap-4 text-[11px] text-ink-mute">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-mute">
             {['mother','father'].map(g => (
               <span key={g} className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: guardianColors[g]?.lightHex, border: `1.5px solid ${guardianColors[g]?.hex}` }} />
-                <span className="font-mono tracking-wide uppercase">{g === 'mother' ? 'A' : 'B'}</span>
+                <span className="font-normal">{guardianHouseLabels?.[g] || (g === 'mother' ? 'Casa A' : 'Casa B')}</span>
               </span>
             ))}
           </div>

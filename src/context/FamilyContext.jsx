@@ -39,6 +39,20 @@ export function FamilyProvider({ children }) {
     }
   }, [members])
 
+  // Labels no formato "Casa de X" (ou "Casa A"/"Casa B" se não houver nome
+  // cadastrado) — usados em legendas de calendário.
+  const guardianHouseLabels = useMemo(() => {
+    const motherMember = members.find(m => m.role === 'mother')
+    const fatherMember = members.find(m => m.role === 'father')
+    const firstName = (n) => (n || '').trim().split(/\s+/)[0]
+    const motherFirst = firstName(motherMember?.name)
+    const fatherFirst = firstName(fatherMember?.name)
+    return {
+      mother: motherFirst ? `Casa de ${motherFirst}` : 'Casa A',
+      father: fatherFirst ? `Casa de ${fatherFirst}` : 'Casa B',
+    }
+  }, [members])
+
   const guardianColors = useMemo(() => {
     const motherMember = members.find(m => m.role === 'mother')
     const fatherMember = members.find(m => m.role === 'father')
@@ -181,6 +195,7 @@ export function FamilyProvider({ children }) {
       setGuardPattern,
       guardianColors,
       guardianLabels,
+      guardianHouseLabels,
       myAccessRole,
       permissions,
     }}>
