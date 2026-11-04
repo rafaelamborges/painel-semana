@@ -20,7 +20,7 @@ const ROLE_LABELS = {
 }
 
 export default function Guarda() {
-  const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, guardianLabels, permissions } = useFamily()
+  const { family, child, members, guardPattern, setGuardPattern, reload, guardianColors, guardianLabels, guardianHouseLabels, permissions } = useFamily()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [swaps, setSwaps] = useState([])
   const [events, setEvents] = useState([])
@@ -192,7 +192,7 @@ export default function Guarda() {
             {['mother', 'father'].map(g => (
               <div key={g} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: guardianColors[g].lightHex, border: `1.5px solid ${guardianColors[g].hex}` }} />
-                <span className="text-[13px] font-light text-ink-body">{guardianLabels[g]}</span>
+                <span className="text-[13px] font-light text-ink-body">{guardianHouseLabels[g]}</span>
               </div>
             ))}
             <div className="flex items-center gap-2">
